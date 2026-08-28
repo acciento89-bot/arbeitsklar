@@ -82,15 +82,6 @@ private struct LockScreenWorkView: View {
     let context: ActivityViewContext<WorkActivityAttributes>
 
     var body: some View {
-        let statusKey: LocalizedStringKey
-        if context.state.isPaused {
-            statusKey = "live_activity.paused"
-        } else if context.state.isRunning {
-            statusKey = "live_activity.running"
-        } else {
-            statusKey = "live_activity.finished"
-        }
-
         HStack(spacing: 16) {
             ZStack {
                 Circle()
@@ -133,6 +124,16 @@ private struct LockScreenWorkView: View {
             }
         }
         .padding(16)
+    }
+
+    private var statusKey: LocalizedStringKey {
+        if context.state.isPaused {
+            return "live_activity.paused"
+        }
+        if context.state.isRunning {
+            return "live_activity.running"
+        }
+        return "live_activity.finished"
     }
 }
 
