@@ -48,6 +48,9 @@ private struct SessionRow: View {
     let session: WorkSession
 
     var body: some View {
+        let breakDuration = session.breakDuration()
+        let overtime = session.overtime()
+
         HStack(spacing: 14) {
             Image(systemName: "briefcase.fill")
                 .font(.system(size: 17, weight: .semibold))
@@ -71,6 +74,26 @@ private struct SessionRow: View {
                 }
                 .font(.caption)
                 .foregroundStyle(theme.secondaryLabel)
+
+                if breakDuration > 0 || overtime > 0 {
+                    HStack(spacing: 8) {
+                        if breakDuration > 0 {
+                            SessionStatPill(
+                                title: "history.breaks",
+                                value: WorkDurationFormatter.string(from: breakDuration),
+                                systemImage: "cup.and.saucer.fill"
+                            )
+                        }
+
+                        if overtime > 0 {
+                            SessionStatPill(
+                                title: "history.overtime",
+                                value: WorkDurationFormatter.string(from: overtime),
+                                systemImage: "clock.badge.exclamationmark"
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(minLength: 8)
@@ -84,6 +107,22 @@ private struct SessionRow: View {
     }
 }
 
+private struct SessionStatPill: View {
+    let title: LocalizedStringKey
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        Label(value, systemImage: systemImage)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.07), in: Capsule())
+            .accessibilityLabel(Text(title))
+            .accessibilityValue(Text(value))
+    }
+}
+
 #Preview("History") {
     NavigationStack {
         HistoryView()
@@ -92,4 +131,3 @@ private struct SessionRow: View {
     .environment(AppTheme())
     .preferredColorScheme(.dark)
 }
-

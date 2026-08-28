@@ -7,12 +7,15 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 ## Current MVP
 
 - Second-by-second in-app earnings ticker
-- Start and finish shifts
+- First-launch setup for pay, currency, and planned shift length
+- Start, pause, resume, and finish shifts
+- Break-aware work time, earnings, and overtime calculations
 - Local shift history and gross-pay estimates
 - Configurable hourly rate, currency, and planned shift length
 - Lock Screen and Dynamic Island Live Activity
 - English and German String Catalog
 - Locale-aware currencies, dates, times, and numbers
+- Custom production-ready app icon
 - No account, tracking, ads, or backend dependency
 
 ## Project structure

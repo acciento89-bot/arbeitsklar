@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum AppPreferences {
+    static let hasCompletedOnboarding = "has_completed_onboarding_v1"
+}
+
 enum AppTab: String, CaseIterable, Identifiable {
     case today
     case history
@@ -27,7 +31,9 @@ enum AppTab: String, CaseIterable, Identifiable {
 @MainActor
 struct AppView: View {
     @Environment(AppTheme.self) private var theme
+    @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @State private var selectedTab: AppTab = .today
+    @State private var showsOnboarding = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -56,6 +62,15 @@ struct AppView: View {
             .tag(AppTab.settings)
         }
         .tint(theme.accent)
+        .onAppear {
+            showsOnboarding = !hasCompletedOnboarding
+        }
+        .onChange(of: hasCompletedOnboarding) { _, isCompleted in
+            showsOnboarding = !isCompleted
+        }
+        .fullScreenCover(isPresented: $showsOnboarding) {
+            OnboardingView()
+        }
     }
 }
 
@@ -65,4 +80,3 @@ struct AppView: View {
         .environment(AppTheme())
         .preferredColorScheme(.dark)
 }
-

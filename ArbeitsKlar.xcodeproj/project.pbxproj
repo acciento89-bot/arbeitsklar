@@ -21,6 +21,7 @@
 		A1000000000000000000000C /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* LiveActivityController.swift */; };
 		A1000000000000000000000D /* WorkSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* WorkSessionStore.swift */; };
 		A1000000000000000000000E /* WorkDurationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* WorkDurationFormatter.swift */; };
+		A1000000000000000000000F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* OnboardingView.swift */; };
 		A10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
 		A10000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* PrivacyInfo.xcprivacy */; };
@@ -75,6 +76,7 @@
 		B10000000000000000000010 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B10000000000000000000011 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B10000000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000000000000000000013 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B10000000000000000000020 /* ArbeitsKlar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArbeitsKlar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000001 /* ArbeitsKlarLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArbeitsKlarLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 				D10000000000000000000007 /* Today */,
 				D10000000000000000000008 /* History */,
 				D10000000000000000000009 /* Settings */,
+				D10000000000000000000010 /* Onboarding */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -183,6 +186,14 @@
 				B10000000000000000000007 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000010 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000013 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		D1000000000000000000000A /* Models */ = {
@@ -374,6 +385,7 @@
 				A1000000000000000000000C /* LiveActivityController.swift in Sources */,
 				A1000000000000000000000D /* WorkSessionStore.swift in Sources */,
 				A1000000000000000000000E /* WorkDurationFormatter.swift in Sources */,
+				A1000000000000000000000F /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -630,4 +642,3 @@
 	};
 	rootObject = E10000000000000000000002 /* Project object */;
 }
-

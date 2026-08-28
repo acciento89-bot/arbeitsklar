@@ -4,11 +4,8 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(WorkSessionStore.self) private var store
     @Environment(AppTheme.self) private var theme
+    @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @State private var showsClearConfirmation = false
-
-    private let currencyCodes = [
-        "EUR", "USD", "GBP", "CHF", "CAD", "AUD", "NZD", "PLN", "SEK", "NOK", "DKK", "CZK", "JPY"
-    ]
 
     var body: some View {
         @Bindable var store = store
@@ -27,7 +24,7 @@ struct SettingsView: View {
                 }
 
                 Picker("settings.currency", selection: $store.profile.currencyCode) {
-                    ForEach(currencyCodes, id: \.self) { code in
+                    ForEach(PayProfile.supportedCurrencyCodes, id: \.self) { code in
                         HStack {
                             Text(code)
                             if let name = Locale.autoupdatingCurrent.localizedString(forCurrencyCode: code) {
@@ -88,6 +85,12 @@ struct SettingsView: View {
 
                 Label("settings.privacy", systemImage: "lock.shield.fill")
                     .foregroundStyle(theme.secondaryLabel)
+
+                Button {
+                    hasCompletedOnboarding = false
+                } label: {
+                    Label("settings.show_onboarding", systemImage: "sparkles.rectangle.stack.fill")
+                }
             }
         }
         .scrollContentBackground(.hidden)
@@ -120,4 +123,3 @@ struct SettingsView: View {
     .environment(AppTheme())
     .preferredColorScheme(.dark)
 }
-

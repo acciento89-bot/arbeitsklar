@@ -75,9 +75,11 @@ struct TodayView: View {
         let rate = active?.hourlyRate ?? store.profile.hourlyRate
         let currency = active?.currencyCode ?? store.profile.currencyCode
         let duration = store.durationToday(asOf: date)
+        let breakDuration = store.breakDurationToday(asOf: date)
+        let overtime = store.overtimeToday(asOf: date)
         let projection = EarningsCalculator.projectedEarnings(
             hourlyRate: rate,
-            plannedHours: store.profile.plannedHours
+            plannedHours: active?.plannedHours ?? store.profile.plannedHours
         )
 
         return LazyVGrid(columns: columns, spacing: 12) {
@@ -85,16 +87,16 @@ struct TodayView: View {
                 Text(WorkDurationFormatter.string(from: duration))
             }
 
-            MetricCard("today.metric.hourly_rate", systemImage: "banknote.fill") {
-                Text(rate, format: .currency(code: currency))
+            MetricCard("today.metric.breaks", systemImage: "cup.and.saucer.fill") {
+                Text(WorkDurationFormatter.string(from: breakDuration))
             }
 
             MetricCard("today.metric.projected", systemImage: "chart.line.uptrend.xyaxis") {
                 Text(projection, format: .currency(code: currency))
             }
 
-            MetricCard("today.metric.sessions", systemImage: "calendar.badge.clock") {
-                Text(store.completedSessions.count, format: .number)
+            MetricCard("today.metric.overtime", systemImage: "clock.badge.exclamationmark") {
+                Text(WorkDurationFormatter.string(from: overtime))
             }
         }
     }
@@ -122,18 +124,17 @@ private struct LiveEarningsCard: View {
 
     var body: some View {
         let session = store.activeSession
-        let actionHint: LocalizedStringKey = session == nil ? "today.start_hint" : "today.stop_hint"
         let currency = session?.currencyCode ?? store.profile.currencyCode
         let amount = session?.earnings(asOf: date) ?? store.earningsToday(asOf: date)
         let hourlyRate = session?.hourlyRate ?? store.profile.hourlyRate
         let progress = min(
-            (session?.duration(asOf: date) ?? 0) / max(store.profile.plannedHours * 3_600, 1),
+            (session?.duration(asOf: date) ?? 0) / max((session?.plannedHours ?? store.profile.plannedHours) * 3_600, 1),
             1
         )
 
         VStack(alignment: .leading, spacing: 22) {
             HStack {
-                statusPill(isActive: session != nil)
+                statusPill(session: session)
                 Spacer()
 
                 ZStack {
@@ -168,8 +169,13 @@ private struct LiveEarningsCard: View {
             HStack(spacing: 18) {
                 Label {
                     if let session {
-                        Text(session.startedAt, style: .timer)
-                            .monospacedDigit()
+                        if session.isPaused {
+                            Text(WorkDurationFormatter.string(from: session.duration(asOf: date)))
+                                .monospacedDigit()
+                        } else {
+                            Text(session.timerReferenceDate(asOf: date), style: .timer)
+                                .monospacedDigit()
+                        }
                     } else {
                         Text("today.timer.ready")
                     }
@@ -186,43 +192,86 @@ private struct LiveEarningsCard: View {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white.opacity(0.82))
 
-            Button {
-                Task {
-                    if store.activeSession == nil {
-                        store.startShift()
-                    } else {
-                        await store.stopShift()
-                    }
-                }
-            } label: {
-                HStack {
-                    Spacer()
-                    if session == nil {
-                        Label("today.start_shift", systemImage: "play.fill")
-                    } else {
-                        Label("today.end_shift", systemImage: "stop.fill")
-                    }
-                    Spacer()
-                }
-                .font(.headline)
-                .padding(.vertical, 15)
-                .foregroundStyle(.white)
-                .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(actionHint)
+            shiftActions(session: session)
         }
         .padding(22)
         .background(theme.heroGradient, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
         .shadow(color: theme.accent.opacity(0.24), radius: 28, y: 16)
     }
 
-    private func statusPill(isActive: Bool) -> some View {
-        let statusKey: LocalizedStringKey = isActive ? "today.status.live" : "today.status.ready"
+    @ViewBuilder
+    private func shiftActions(session: WorkSession?) -> some View {
+        if let session {
+            let pauseTitle: LocalizedStringKey = session.isPaused
+                ? "today.resume_shift"
+                : "today.pause_shift"
+            let pauseHint: LocalizedStringKey = session.isPaused
+                ? "today.resume_hint"
+                : "today.pause_hint"
+
+            HStack(spacing: 10) {
+                Button {
+                    Task {
+                        if session.isPaused {
+                            await store.resumeShift()
+                        } else {
+                            await store.pauseShift()
+                        }
+                    }
+                } label: {
+                    Label {
+                        Text(pauseTitle)
+                    } icon: {
+                        Image(systemName: session.isPaused ? "play.fill" : "pause.fill")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                }
+                .buttonStyle(HeroActionButtonStyle(background: .white.opacity(0.2)))
+                .accessibilityHint(Text(pauseHint))
+
+                Button {
+                    Task { await store.stopShift() }
+                } label: {
+                    Label("today.end_shift", systemImage: "stop.fill")
+                        .frame(maxWidth: .infinity)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .buttonStyle(HeroActionButtonStyle(background: .black.opacity(0.72)))
+                .accessibilityHint("today.stop_hint")
+            }
+        } else {
+            Button {
+                store.startShift()
+            } label: {
+                Label("today.start_shift", systemImage: "play.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(HeroActionButtonStyle(background: .black.opacity(0.72)))
+            .accessibilityHint("today.start_hint")
+        }
+    }
+
+    private func statusPill(session: WorkSession?) -> some View {
+        let statusKey: LocalizedStringKey
+        let statusColor: Color
+
+        if session?.isPaused == true {
+            statusKey = "today.status.paused"
+            statusColor = theme.warning
+        } else if session != nil {
+            statusKey = "today.status.live"
+            statusColor = theme.success
+        } else {
+            statusKey = "today.status.ready"
+            statusColor = .white.opacity(0.7)
+        }
 
         return HStack(spacing: 7) {
             Circle()
-                .fill(isActive ? Color.green : Color.white.opacity(0.7))
+                .fill(statusColor)
                 .frame(width: 8, height: 8)
 
             Text(statusKey)
@@ -237,11 +286,38 @@ private struct LiveEarningsCard: View {
     }
 }
 
+private struct HeroActionButtonStyle: ButtonStyle {
+    let background: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .padding(.vertical, 15)
+            .padding(.horizontal, 10)
+            .foregroundStyle(.white)
+            .background(
+                background.opacity(configuration.isPressed ? 0.72 : 1),
+                in: RoundedRectangle(cornerRadius: 17, style: .continuous)
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.14), value: configuration.isPressed)
+    }
+}
+
 #Preview("Active shift") {
     NavigationStack {
         TodayView()
     }
     .environment(WorkSessionStore.preview)
+    .environment(AppTheme())
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Paused shift") {
+    NavigationStack {
+        TodayView()
+    }
+    .environment(WorkSessionStore.pausedPreview)
     .environment(AppTheme())
     .preferredColorScheme(.dark)
 }

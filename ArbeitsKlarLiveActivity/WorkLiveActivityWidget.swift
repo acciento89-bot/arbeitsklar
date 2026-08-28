@@ -51,7 +51,7 @@ struct WorkLiveActivityWidget: Widget {
                     .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                Image(systemName: "bolt.fill")
+                Image(systemName: context.state.isPaused ? "pause.fill" : "bolt.fill")
                     .foregroundStyle(.blue)
             } compactTrailing: {
                 activityTimer(for: context.state)
@@ -70,8 +70,8 @@ struct WorkLiveActivityWidget: Widget {
     private func activityTimer(
         for state: WorkActivityAttributes.ContentState
     ) -> some View {
-        if state.isRunning {
-            Text(state.startedAt, style: .timer)
+        if state.isRunning, !state.isPaused {
+            Text(state.timerReferenceDate, style: .timer)
         } else {
             Text(WorkDurationFormatter.string(from: state.elapsedSeconds))
         }
@@ -82,15 +82,20 @@ private struct LockScreenWorkView: View {
     let context: ActivityViewContext<WorkActivityAttributes>
 
     var body: some View {
-        let statusKey: LocalizedStringKey = context.state.isRunning
-            ? "live_activity.running"
-            : "live_activity.finished"
+        let statusKey: LocalizedStringKey
+        if context.state.isPaused {
+            statusKey = "live_activity.paused"
+        } else if context.state.isRunning {
+            statusKey = "live_activity.running"
+        } else {
+            statusKey = "live_activity.finished"
+        }
 
         HStack(spacing: 16) {
             ZStack {
                 Circle()
                     .fill(.blue.opacity(0.16))
-                Image(systemName: "bolt.fill")
+                Image(systemName: context.state.isPaused ? "pause.fill" : "bolt.fill")
                     .font(.title2.bold())
                     .foregroundStyle(.blue)
             }
@@ -136,8 +141,8 @@ private struct WorkActivityTimer: View {
 
     var body: some View {
         Group {
-            if state.isRunning {
-                Text(state.startedAt, style: .timer)
+            if state.isRunning, !state.isPaused {
+                Text(state.timerReferenceDate, style: .timer)
             } else {
                 Text(WorkDurationFormatter.string(from: state.elapsedSeconds))
             }

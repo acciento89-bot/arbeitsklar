@@ -81,12 +81,14 @@ final class LiveActivityController {
     ) -> WorkActivityAttributes.ContentState {
         WorkActivityAttributes.ContentState(
             startedAt: session.startedAt,
+            timerReferenceDate: session.timerReferenceDate(asOf: date),
             updatedAt: date,
             elapsedSeconds: session.duration(asOf: date),
             earnedAmount: session.earnings(asOf: date),
             hourlyRate: session.hourlyRate,
             currencyCode: session.currencyCode,
-            isRunning: isRunning
+            isRunning: isRunning,
+            isPaused: session.isPaused
         )
     }
 }
