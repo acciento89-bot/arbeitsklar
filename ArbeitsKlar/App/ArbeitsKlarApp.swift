@@ -1,9 +1,22 @@
+import Foundation
 import SwiftUI
 
 @main
 struct ArbeitsKlarApp: App {
+    #if DEBUG
+    @State private var store = ProcessInfo.processInfo.arguments.contains("-demo-data")
+        ? WorkSessionStore.demo
+        : WorkSessionStore()
+    #else
     @State private var store = WorkSessionStore()
+    #endif
+    #if DEBUG
+    @State private var purchases = PurchaseManager(
+        isPro: ProcessInfo.processInfo.arguments.contains("-pro-preview")
+    )
+    #else
     @State private var purchases = PurchaseManager()
+    #endif
     @State private var theme = AppTheme()
 
     var body: some Scene {

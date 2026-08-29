@@ -24,6 +24,9 @@ struct HistoryView: View {
     @State private var exportDocument = WorkSessionCSVDocument()
     @State private var showsExporter = false
     @State private var showsExportError = false
+    @State private var selectedPeriod: HistoryPeriod = .month
+    @State private var referenceDate = Date.now
+    @State private var filteredSessions: [WorkSession] = []
 
     var body: some View {
         Group {
@@ -38,7 +41,12 @@ struct HistoryView: View {
                 List {
                     Section {
                         if purchases.isPro {
-                            WeekSummaryCard(summary: store.currentWeekSummary())
+                            HistoryInsightsCard(
+                                period: $selectedPeriod,
+                                referenceDate: $referenceDate,
+                                summary: periodSummary,
+                                earningsPoints: earningsPoints
+                            )
                                 .listRowInsets(EdgeInsets())
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
@@ -56,28 +64,37 @@ struct HistoryView: View {
                     }
 
                     Section {
-                        ForEach(store.completedSessions) { session in
-                            Button {
-                                openEditor(for: session)
-                            } label: {
-                                SessionRow(session: session)
-                            }
-                            .buttonStyle(.plain)
-                                .listRowBackground(theme.elevatedBackground)
-                                .swipeActions {
-                                    Button {
-                                        openEditor(for: session)
-                                    } label: {
-                                        Label("history.edit", systemImage: "pencil")
-                                    }
-                                    .tint(theme.accent)
-
-                                    Button(role: .destructive) {
-                                        store.deleteSession(id: session.id)
-                                    } label: {
-                                        Label("history.delete", systemImage: "trash")
-                                    }
+                        if filteredSessions.isEmpty {
+                            ContentUnavailableView(
+                                "history.period.empty.title",
+                                systemImage: "calendar.badge.exclamationmark",
+                                description: Text("history.period.empty.message")
+                            )
+                            .listRowBackground(Color.clear)
+                        } else {
+                            ForEach(filteredSessions) { session in
+                                Button {
+                                    openEditor(for: session)
+                                } label: {
+                                    SessionRow(session: session)
                                 }
+                                .buttonStyle(.plain)
+                                    .listRowBackground(theme.elevatedBackground)
+                                    .swipeActions {
+                                        Button {
+                                            openEditor(for: session)
+                                        } label: {
+                                            Label("history.edit", systemImage: "pencil")
+                                        }
+                                        .tint(theme.accent)
+
+                                        Button(role: .destructive) {
+                                            store.deleteSession(id: session.id)
+                                        } label: {
+                                            Label("history.delete", systemImage: "trash")
+                                        }
+                                    }
+                            }
                         }
                     } header: {
                         Text("history.section.completed")
@@ -124,6 +141,34 @@ struct HistoryView: View {
         } message: {
             Text("export.error.message")
         }
+        .onChange(of: store.completedSessions, initial: true) {
+            refreshFilteredSessions()
+        }
+        .onChange(of: selectedPeriod) {
+            referenceDate = .now
+            refreshFilteredSessions()
+        }
+        .onChange(of: referenceDate) {
+            refreshFilteredSessions()
+        }
+        .onChange(of: purchases.isPro) {
+            refreshFilteredSessions()
+        }
+    }
+
+    private var periodSummary: WorkPeriodSummary {
+        HistoryAnalytics.summary(
+            for: filteredSessions,
+            fallbackCurrencyCode: store.profile.currencyCode
+        )
+    }
+
+    private var earningsPoints: [HistoryEarningsPoint] {
+        HistoryAnalytics.earningsPoints(
+            for: filteredSessions,
+            period: selectedPeriod,
+            currencyCode: periodSummary.currencyCode
+        )
     }
 
     private func openEditor(for session: WorkSession) {
@@ -135,8 +180,20 @@ struct HistoryView: View {
             presentedSheet = .pro
             return
         }
-        exportDocument = WorkSessionCSVDocument(sessions: store.completedSessions)
+        exportDocument = WorkSessionCSVDocument(sessions: filteredSessions)
         showsExporter = true
+    }
+
+    private func refreshFilteredSessions() {
+        if purchases.isPro {
+            filteredSessions = HistoryAnalytics.sessions(
+                from: store.completedSessions,
+                period: selectedPeriod,
+                asOf: referenceDate
+            )
+        } else {
+            filteredSessions = store.completedSessions
+        }
     }
 }
 
@@ -176,99 +233,6 @@ private struct ProHistoryTeaser: View {
         .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityHint("history.pro.hint")
-    }
-}
-
-private struct WeekSummaryCard: View {
-    @Environment(AppTheme.self) private var theme
-    @Environment(\.locale) private var locale
-
-    let summary: WorkPeriodSummary
-
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("history.week.kicker")
-                        .font(.caption.weight(.bold))
-                        .tracking(1.1)
-                        .foregroundStyle(theme.success)
-
-                    Text("history.week.title")
-                        .font(.title2.bold())
-                }
-
-                Spacer()
-
-                Image(systemName: "calendar.badge.clock")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(theme.accent)
-                    .frame(width: 42, height: 42)
-                    .background(theme.accent.opacity(0.14), in: Circle())
-            }
-
-            if summary.isEmpty {
-                Text("history.week.empty")
-                    .font(.subheadline)
-                    .foregroundStyle(theme.secondaryLabel)
-            } else {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
-                    WeekSummaryValue(
-                        title: "history.week.work_time",
-                        value: WorkDurationFormatter.string(from: summary.workDuration)
-                    )
-                    WeekSummaryValue(
-                        title: "history.week.earnings",
-                        value: summary.earnings.formatted(
-                            .currency(code: summary.currencyCode).locale(locale)
-                        )
-                    )
-                    WeekSummaryValue(
-                        title: "history.week.breaks",
-                        value: WorkDurationFormatter.string(from: summary.breakDuration)
-                    )
-                    WeekSummaryValue(
-                        title: "history.week.overtime",
-                        value: WorkDurationFormatter.string(from: summary.overtimeDuration)
-                    )
-                }
-            }
-        }
-        .padding(20)
-        .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        }
-        .accessibilityElement(children: .contain)
-    }
-}
-
-private struct WeekSummaryValue: View {
-    @Environment(AppTheme.self) private var theme
-
-    let title: LocalizedStringKey
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(value)
-                .font(.headline.weight(.semibold))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(theme.secondaryLabel)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 }
 

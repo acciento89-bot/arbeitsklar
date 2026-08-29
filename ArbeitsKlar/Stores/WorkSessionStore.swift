@@ -10,6 +10,12 @@ struct WorkPeriodSummary: Equatable {
     let currencyCode: String
 
     var isEmpty: Bool { sessionCount == 0 }
+    var averageWorkDuration: TimeInterval {
+        isEmpty ? 0 : workDuration / Double(sessionCount)
+    }
+    var averageEarnings: Double {
+        isEmpty ? 0 : earnings / Double(sessionCount)
+    }
 }
 
 @MainActor
@@ -317,4 +323,45 @@ extension WorkSessionStore {
         ]
         return store
     }
+
+    #if DEBUG
+    static var demo: WorkSessionStore {
+        let suiteName = "ArbeitsKlar.Demo.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        let store = WorkSessionStore(defaults: defaults, liveActivitiesEnabled: false)
+        let calendar = Calendar.autoupdatingCurrent
+
+        store.profile = PayProfile(hourlyRate: 24.5, currencyCode: "EUR", plannedHours: 8)
+        store.sessions = (0..<70).compactMap { dayOffset in
+            guard
+                let day = calendar.date(byAdding: .day, value: -dayOffset, to: .now),
+                !calendar.isDateInWeekend(day),
+                let startedAt = calendar.date(bySettingHour: 7, minute: 30, second: 0, of: day)
+            else {
+                return nil
+            }
+
+            let workHours = [7.5, 8.0, 8.5, 9.0][dayOffset % 4]
+            let breakDuration: TimeInterval = dayOffset % 3 == 0 ? 2_700 : 1_800
+            let breakStart = startedAt.addingTimeInterval(4 * 3_600)
+            let endedAt = startedAt.addingTimeInterval(workHours * 3_600 + breakDuration)
+
+            return WorkSession(
+                startedAt: startedAt,
+                endedAt: endedAt,
+                hourlyRate: 24.5,
+                currencyCode: "EUR",
+                plannedHours: 8,
+                breaks: [
+                    WorkBreak(
+                        startedAt: breakStart,
+                        endedAt: breakStart.addingTimeInterval(breakDuration)
+                    )
+                ]
+            )
+        }
+        .sorted { $0.startedAt > $1.startedAt }
+        return store
+    }
+    #endif
 }
