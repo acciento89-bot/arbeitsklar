@@ -118,7 +118,7 @@ struct PaycheckAuditView: View {
         let differenceTitle: LocalizedStringKey = difference < 0 ? "paycheck.missing" : "paycheck.difference"
         let statusTitle: LocalizedStringKey = difference < -0.01 ? "paycheck.status.check" : "paycheck.status.ok"
 
-        Grid(horizontalSpacing: 20, verticalSpacing: 12) {
+        return Grid(horizontalSpacing: 20, verticalSpacing: 12) {
             GridRow {
                 comparisonValue("paycheck.expected", amount: expectedGross, color: .primary)
                 comparisonValue("paycheck.actual", amount: actualGross, color: .primary)
