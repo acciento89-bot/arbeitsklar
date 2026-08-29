@@ -45,6 +45,8 @@ Shift templates and planned shifts are stored separately from shift history. Sta
 
 For local UI testing without an App Store Connect product, select the shared `ArbeitsKlar Pro Preview` scheme in Xcode. It is a Debug-only mode that unlocks Pro and loads a realistic multi-week demo history. Release and Archive builds cannot activate this override.
 
+The complete internal click-through is documented in `TESTING.md`. CI builds both the production scheme and the Pro Preview scheme for the iOS Simulator.
+
 ## Project structure
 
 - ArbeitsKlar — main SwiftUI application

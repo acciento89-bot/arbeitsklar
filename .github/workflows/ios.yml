@@ -24,3 +24,15 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
           build
+
+      - name: Build Pro Preview for iOS Simulator
+        run: >
+          xcodebuild
+          -project ArbeitsKlar.xcodeproj
+          -scheme 'ArbeitsKlar Pro Preview'
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/ArbeitsKlarPreviewDerivedData"
+          CODE_SIGNING_ALLOWED=NO
+          build
