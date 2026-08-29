@@ -32,7 +32,7 @@ struct WorkSessionCSVDocument: FileDocument {
         let dateFormatter = ISO8601DateFormatter()
         let rows = sessions.map { session in
             let breakdown = session.earningsBreakdown()
-            [
+            return [
                 dateFormatter.string(from: session.startedAt),
                 session.endedAt.map(dateFormatter.string(from:)) ?? "",
                 decimal(session.duration()),
