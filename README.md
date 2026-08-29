@@ -12,6 +12,8 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 - Break-aware work time, earnings, and overtime calculations
 - Editable completed shifts with recalculated breaks and earnings
 - Manual completed-shift entry for forgotten or imported workdays (Pro)
+- Reusable shift templates with one-tap quick start
+- Searchable shift titles, notes, and tags
 - Configurable monthly gross-earnings goal with live progress
 - Motivational per-shift goal with a live, premium-aware time-to-goal forecast
 - Transparent base-pay, overtime, night, and weekend premium breakdowns
@@ -35,6 +37,8 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 StoreKit 2 support is implemented for the non-consumable product `de.kamilunavo.arbeitsklar.pro.lifetime`. The app verifies current entitlements, listens for transaction updates, supports pending purchases, and provides an explicit restore action.
 
 No product has been created in App Store Connect by this repository change. Until that non-consumable product is configured there, the paywall remains visible but purchasing stays disabled. Pro unlocks week/month/all-time insights with an earnings chart, the monthly payslip audit, manual entry and editing of completed shifts, filtered CSV export, premium color themes, and local shift-end reminders.
+
+Shift templates are stored separately from shift history. Starting a template snapshots its name, note, tags, planned duration, current pay profile, and current premium rules into the new shift. Existing saved shifts decode with empty metadata, so this change remains backward compatible.
 
 For local UI testing without an App Store Connect product, select the shared `ArbeitsKlar Pro Preview` scheme in Xcode. It is a Debug-only mode that unlocks Pro and loads a realistic multi-week demo history. Release and Archive builds cannot activate this override.
 
@@ -78,4 +82,4 @@ The elapsed timer is system-driven and continues on the Lock Screen. Apple contr
 
 ## Privacy
 
-The MVP stores its profile and shift history in UserDefaults on the device. PrivacyInfo.xcprivacy declares this required-reason API use. No personal data leaves the device.
+The MVP stores its profile, shift templates, payslip checks, and shift history in UserDefaults on the device. PrivacyInfo.xcprivacy declares this required-reason API use. No personal data leaves the device.

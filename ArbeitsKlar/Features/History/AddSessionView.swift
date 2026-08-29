@@ -12,8 +12,19 @@ struct AddSessionView: View {
     @State private var hourlyRate: Double
     @State private var currencyCode: String
     @State private var plannedHours: Double
+    @State private var selectedTemplateID: UUID?
+    @State private var title: String
+    @State private var note: String
+    @State private var tagsText: String
     private let payRules: PayRules
-    @FocusState private var isRateFocused: Bool
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case rate
+        case title
+        case tags
+        case note
+    }
 
     init(profile: PayProfile) {
         let end = Date.now
@@ -22,12 +33,27 @@ struct AddSessionView: View {
         _hourlyRate = State(initialValue: profile.hourlyRate)
         _currencyCode = State(initialValue: profile.currencyCode)
         _plannedHours = State(initialValue: profile.plannedHours)
+        _selectedTemplateID = State(initialValue: nil)
+        _title = State(initialValue: "")
+        _note = State(initialValue: "")
+        _tagsText = State(initialValue: "")
         payRules = profile.payRules
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if !store.shiftTemplates.isEmpty {
+                    Section("templates.apply.section") {
+                        Picker("templates.apply", selection: $selectedTemplateID) {
+                            Text("templates.apply.none").tag(Optional<UUID>.none)
+                            ForEach(store.shiftTemplates) { template in
+                                Text(template.name).tag(Optional(template.id))
+                            }
+                        }
+                    }
+                }
+
                 Section("edit.section.time") {
                     DatePicker("edit.start", selection: $startedAt, in: ...endedAt, displayedComponents: [.date, .hourAndMinute])
                     DatePicker("edit.end", selection: $endedAt, in: startedAt..., displayedComponents: [.date, .hourAndMinute])
@@ -48,7 +74,7 @@ struct AddSessionView: View {
                         TextField("settings.hourly_rate", value: $hourlyRate, format: .number.precision(.fractionLength(2)))
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .focused($isRateFocused)
+                            .focused($focusedField, equals: .rate)
                             .frame(maxWidth: 120)
                     }
 
@@ -67,6 +93,22 @@ struct AddSessionView: View {
                             .monospacedDigit()
                         }
                     }
+                }
+
+                Section {
+                    TextField("session.title.placeholder", text: $title)
+                        .textInputAutocapitalization(.sentences)
+                        .focused($focusedField, equals: .title)
+                    TextField("session.tags.placeholder", text: $tagsText)
+                        .textInputAutocapitalization(.words)
+                        .focused($focusedField, equals: .tags)
+                    TextField("session.note.placeholder", text: $note, axis: .vertical)
+                        .lineLimit(3...6)
+                        .focused($focusedField, equals: .note)
+                } header: {
+                    Text("session.section.details")
+                } footer: {
+                    Text("session.tags.help")
                 }
 
                 Section("edit.section.preview") {
@@ -100,11 +142,12 @@ struct AddSessionView: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("common.done") { isRateFocused = false }
+                    Button("common.done") { focusedField = nil }
                 }
             }
             .onChange(of: startedAt) { clampBreakDuration() }
             .onChange(of: endedAt) { clampBreakDuration() }
+            .onChange(of: selectedTemplateID) { applySelectedTemplate() }
         }
     }
 
@@ -125,7 +168,10 @@ struct AddSessionView: View {
             currencyCode: currencyCode,
             plannedHours: plannedHours,
             breaks: previewBreaks,
-            payRules: payRules
+            payRules: payRules,
+            title: title,
+            note: note,
+            tags: parsedTags
         )
         return previewSession.earningsBreakdown()
     }
@@ -143,10 +189,36 @@ struct AddSessionView: View {
             hourlyRate: hourlyRate,
             currencyCode: currencyCode,
             plannedHours: plannedHours,
-            payRules: payRules
+            payRules: payRules,
+            title: title,
+            note: note,
+            tags: parsedTags
         ) {
             dismiss()
         }
+    }
+
+    private var parsedTags: [String] {
+        ShiftTemplate.normalizedTags(tagsText.split(separator: ",").map(String.init))
+    }
+
+    private func applySelectedTemplate() {
+        guard
+            let selectedTemplateID,
+            let template = store.shiftTemplates.first(where: { $0.id == selectedTemplateID })
+        else { return }
+
+        let templateStart = template.startDate(on: startedAt)
+        startedAt = templateStart
+        plannedHours = template.plannedHours
+        breakMinutes = template.breakMinutes
+        endedAt = templateStart.addingTimeInterval(
+            template.plannedHours * 3_600 + TimeInterval(template.breakMinutes * 60)
+        )
+        title = template.name
+        note = template.note
+        tagsText = template.tags.joined(separator: ", ")
+        clampBreakDuration()
     }
 
     private func currencyName(for code: String) -> String {

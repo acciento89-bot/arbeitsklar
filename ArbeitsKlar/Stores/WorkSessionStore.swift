@@ -40,6 +40,10 @@ final class WorkSessionStore {
         didSet { persistPaycheckAudits() }
     }
 
+    private(set) var shiftTemplates: [ShiftTemplate] {
+        didSet { persistShiftTemplates() }
+    }
+
     @ObservationIgnored
     private let defaults: UserDefaults
 
@@ -51,6 +55,7 @@ final class WorkSessionStore {
 
     private static let snapshotKey = "work_session_snapshot_v1"
     private static let paycheckAuditsKey = "paycheck_audits_v1"
+    private static let shiftTemplatesKey = "shift_templates_v1"
 
     init(
         defaults: UserDefaults = .standard,
@@ -59,6 +64,14 @@ final class WorkSessionStore {
         self.defaults = defaults
         self.liveActivityController = LiveActivityController(isEnabled: liveActivitiesEnabled)
         self.reminderController = ShiftReminderController()
+        if
+            let templateData = defaults.data(forKey: Self.shiftTemplatesKey),
+            let templates = try? JSONDecoder().decode([ShiftTemplate].self, from: templateData)
+        {
+            self.shiftTemplates = templates
+        } else {
+            self.shiftTemplates = []
+        }
         if
             let auditData = defaults.data(forKey: Self.paycheckAuditsKey),
             let audits = try? JSONDecoder().decode([PaycheckAudit].self, from: auditData)
@@ -99,6 +112,24 @@ final class WorkSessionStore {
             currencyCode: profile.currencyCode,
             plannedHours: profile.plannedHours,
             payRules: profile.payRules
+        )
+        sessions.insert(session, at: 0)
+        liveActivityController.start(for: session)
+        await scheduleReminderIfNeeded(for: session, asOf: date)
+    }
+
+    func startShift(using template: ShiftTemplate, at date: Date = .now) async {
+        guard activeSession == nil else { return }
+
+        let session = WorkSession(
+            startedAt: date,
+            hourlyRate: profile.hourlyRate,
+            currencyCode: profile.currencyCode,
+            plannedHours: template.plannedHours,
+            payRules: profile.payRules,
+            title: template.name,
+            note: template.note,
+            tags: template.tags
         )
         sessions.insert(session, at: 0)
         liveActivityController.start(for: session)
@@ -180,7 +211,10 @@ final class WorkSessionStore {
         hourlyRate: Double,
         currencyCode: String,
         plannedHours: Double,
-        payRules: PayRules
+        payRules: PayRules,
+        title: String = "",
+        note: String = "",
+        tags: [String] = []
     ) -> Bool {
         guard endedAt > startedAt, hourlyRate > 0, plannedHours > 0 else {
             return false
@@ -210,7 +244,10 @@ final class WorkSessionStore {
                 currencyCode: currencyCode,
                 plannedHours: plannedHours,
                 breaks: breaks,
-                payRules: payRules
+                payRules: payRules,
+                title: title,
+                note: note,
+                tags: tags
             )
         )
         sessions.sort { $0.startedAt > $1.startedAt }
@@ -225,7 +262,10 @@ final class WorkSessionStore {
         breakDuration: TimeInterval,
         hourlyRate: Double,
         currencyCode: String,
-        plannedHours: Double
+        plannedHours: Double,
+        title: String,
+        note: String,
+        tags: [String]
     ) -> Bool {
         guard let index = sessions.firstIndex(where: { $0.id == id && !$0.isActive }) else {
             return false
@@ -242,6 +282,9 @@ final class WorkSessionStore {
         updatedSession.hourlyRate = hourlyRate
         updatedSession.currencyCode = currencyCode
         updatedSession.plannedHours = plannedHours
+        updatedSession.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        updatedSession.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        updatedSession.tags = ShiftTemplate.normalizedTags(tags)
 
         if normalizedBreakDuration > 0 {
             let workedBeforeBreak = (totalDuration - normalizedBreakDuration) / 2
@@ -264,6 +307,19 @@ final class WorkSessionStore {
 
     func clearCompletedSessions() {
         sessions.removeAll { !$0.isActive }
+    }
+
+    func saveShiftTemplate(_ template: ShiftTemplate) {
+        guard !template.name.isEmpty else { return }
+        if let index = shiftTemplates.firstIndex(where: { $0.id == template.id }) {
+            shiftTemplates[index] = template
+        } else {
+            shiftTemplates.append(template)
+        }
+    }
+
+    func deleteShiftTemplate(id: UUID) {
+        shiftTemplates.removeAll { $0.id == id }
     }
 
     func earningsToday(asOf date: Date = .now) -> Double {
@@ -302,6 +358,12 @@ final class WorkSessionStore {
             let audits = try? JSONDecoder().decode([PaycheckAudit].self, from: auditData)
         {
             paycheckAudits = audits.sorted { $0.month > $1.month }
+        }
+        if
+            let templateData = defaults.data(forKey: Self.shiftTemplatesKey),
+            let templates = try? JSONDecoder().decode([ShiftTemplate].self, from: templateData)
+        {
+            shiftTemplates = templates
         }
     }
 
@@ -427,6 +489,11 @@ final class WorkSessionStore {
         guard let data = try? JSONEncoder().encode(paycheckAudits) else { return }
         defaults.set(data, forKey: Self.paycheckAuditsKey)
     }
+
+    private func persistShiftTemplates() {
+        guard let data = try? JSONEncoder().encode(shiftTemplates) else { return }
+        defaults.set(data, forKey: Self.shiftTemplatesKey)
+    }
 }
 
 extension WorkSessionStore {
@@ -444,6 +511,16 @@ extension WorkSessionStore {
             shiftGoalTitle: "Weekend trip",
             payRules: PayRules(overtimeMultiplier: 1.25, nightBonusPercent: 20, weekendBonusPercent: 30)
         )
+        store.shiftTemplates = [
+            ShiftTemplate(
+                name: "Early shift",
+                startHour: 7,
+                startMinute: 30,
+                plannedHours: 8,
+                breakMinutes: 30,
+                tags: ["Service"]
+            )
+        ]
         store.sessions = [
             WorkSession(
                 startedAt: .now.addingTimeInterval(-2_700),
@@ -482,6 +559,9 @@ extension WorkSessionStore {
             shiftGoalTitle: "Weekend trip",
             payRules: PayRules(overtimeMultiplier: 1.25, nightBonusPercent: 20, weekendBonusPercent: 30)
         )
+        store.shiftTemplates = [
+            ShiftTemplate(name: "Early shift", plannedHours: 8, breakMinutes: 30, tags: ["Service"])
+        ]
         store.sessions = [
             WorkSession(
                 startedAt: .now.addingTimeInterval(-3_600),
@@ -511,6 +591,10 @@ extension WorkSessionStore {
             shiftGoalTitle: "Holiday fund",
             payRules: PayRules(overtimeMultiplier: 1.25, nightBonusPercent: 20, weekendBonusPercent: 30)
         )
+        store.shiftTemplates = [
+            ShiftTemplate(name: "Service", startHour: 7, startMinute: 30, plannedHours: 8, breakMinutes: 30, tags: ["Service"]),
+            ShiftTemplate(name: "Emergency duty", startHour: 16, plannedHours: 6, breakMinutes: 0, tags: ["On-call"])
+        ]
         store.sessions = (0..<70).compactMap { dayOffset in
             guard
                 let day = calendar.date(byAdding: .day, value: -dayOffset, to: .now),
@@ -537,7 +621,10 @@ extension WorkSessionStore {
                         endedAt: breakStart.addingTimeInterval(breakDuration)
                     )
                 ],
-                payRules: store.profile.payRules
+                payRules: store.profile.payRules,
+                title: dayOffset % 5 == 0 ? "Emergency duty" : "Service",
+                note: dayOffset % 7 == 0 ? "Customer visit documented" : "",
+                tags: dayOffset % 5 == 0 ? ["On-call"] : ["Service"]
             )
         }
         .sorted { $0.startedAt > $1.startedAt }

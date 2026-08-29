@@ -23,6 +23,10 @@ struct TodayView: View {
                     LiveEarningsCard(date: .now)
                 }
 
+                if store.activeSession == nil, !store.shiftTemplates.isEmpty {
+                    ShiftTemplateQuickStart()
+                }
+
                 if store.activeSession != nil {
                     TimelineView(.periodic(from: .now, by: 1)) { timeline in
                         metrics(at: timeline.date)
@@ -136,6 +140,73 @@ struct TodayView: View {
         .foregroundStyle(theme.secondaryLabel)
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 6)
+    }
+}
+
+@MainActor
+private struct ShiftTemplateQuickStart: View {
+    @Environment(WorkSessionStore.self) private var store
+    @Environment(AppTheme.self) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("templates.quick.title")
+                        .font(.headline)
+                    Text("templates.quick.subtitle")
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryLabel)
+                }
+                Spacer()
+                Image(systemName: "bolt.badge.clock.fill")
+                    .foregroundStyle(theme.accent)
+            }
+
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(store.shiftTemplates) { template in
+                        Button {
+                            Task { await store.startShift(using: template) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 9) {
+                                Text(template.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .lineLimit(1)
+
+                                HStack(spacing: 10) {
+                                    Label {
+                                        Text(template.plannedHours, format: .number.precision(.fractionLength(0...1)))
+                                        Text("unit.hours")
+                                    } icon: {
+                                        Image(systemName: "timer")
+                                    }
+                                    Label {
+                                        Text(template.breakMinutes, format: .number)
+                                        Text("unit.minutes")
+                                    } icon: {
+                                        Image(systemName: "cup.and.saucer")
+                                    }
+                                }
+                                .font(.caption)
+                                .foregroundStyle(theme.secondaryLabel)
+                            }
+                            .frame(width: 210, alignment: .leading)
+                            .padding(14)
+                            .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(theme.accent.opacity(0.22), lineWidth: 1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("templates.quick.hint")
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+        .accessibilityElement(children: .contain)
     }
 }
 

@@ -141,6 +141,24 @@ struct SettingsView: View {
             }
 
             Section {
+                NavigationLink {
+                    ShiftTemplatesView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Label("settings.shift_templates", systemImage: "calendar.badge.clock")
+                        Spacer()
+                        Text(store.shiftTemplates.count, format: .number)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(theme.accent)
+                    }
+                }
+            } header: {
+                Text("settings.section.templates")
+            } footer: {
+                Text("settings.shift_templates.note")
+            }
+
+            Section {
                 LabeledContent("settings.monthly_goal") {
                     HStack(spacing: 5) {
                         TextField(

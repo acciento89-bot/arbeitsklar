@@ -31,6 +31,9 @@ struct WorkSession: Codable, Hashable, Identifiable {
     var plannedHours: Double
     var breaks: [WorkBreak]
     var payRules: PayRules
+    var title: String
+    var note: String
+    var tags: [String]
 
     init(
         id: UUID = UUID(),
@@ -40,7 +43,10 @@ struct WorkSession: Codable, Hashable, Identifiable {
         currencyCode: String,
         plannedHours: Double = 8,
         breaks: [WorkBreak] = [],
-        payRules: PayRules = .none
+        payRules: PayRules = .none,
+        title: String = "",
+        note: String = "",
+        tags: [String] = []
     ) {
         self.id = id
         self.startedAt = startedAt
@@ -50,6 +56,9 @@ struct WorkSession: Codable, Hashable, Identifiable {
         self.plannedHours = plannedHours
         self.breaks = breaks
         self.payRules = payRules
+        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.tags = ShiftTemplate.normalizedTags(tags)
     }
 
     var isActive: Bool { endedAt == nil }
@@ -65,6 +74,9 @@ struct WorkSession: Codable, Hashable, Identifiable {
         case plannedHours
         case breaks
         case payRules
+        case title
+        case note
+        case tags
     }
 
     init(from decoder: Decoder) throws {
@@ -77,6 +89,11 @@ struct WorkSession: Codable, Hashable, Identifiable {
         plannedHours = try container.decodeIfPresent(Double.self, forKey: .plannedHours) ?? 8
         breaks = try container.decodeIfPresent([WorkBreak].self, forKey: .breaks) ?? []
         payRules = try container.decodeIfPresent(PayRules.self, forKey: .payRules) ?? .none
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        note = try container.decodeIfPresent(String.self, forKey: .note) ?? ""
+        tags = ShiftTemplate.normalizedTags(
+            try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        )
     }
 
     func duration(asOf date: Date = .now) -> TimeInterval {

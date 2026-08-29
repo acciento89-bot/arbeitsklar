@@ -33,6 +33,7 @@ struct HistoryView: View {
     @State private var selectedPeriod: HistoryPeriod = .month
     @State private var referenceDate = Date.now
     @State private var filteredSessions: [WorkSession] = []
+    @State private var searchQuery = ""
 
     var body: some View {
         Group {
@@ -129,6 +130,7 @@ struct HistoryView: View {
             }
         }
         .navigationTitle("history.title")
+        .searchable(text: $searchQuery, prompt: "history.search.prompt")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -188,6 +190,9 @@ struct HistoryView: View {
         .onChange(of: purchases.isPro) {
             refreshFilteredSessions()
         }
+        .onChange(of: searchQuery) {
+            refreshFilteredSessions()
+        }
     }
 
     private var periodSummary: WorkPeriodSummary {
@@ -233,14 +238,26 @@ struct HistoryView: View {
     }
 
     private func refreshFilteredSessions() {
+        let periodSessions: [WorkSession]
         if purchases.isPro {
-            filteredSessions = HistoryAnalytics.sessions(
+            periodSessions = HistoryAnalytics.sessions(
                 from: store.completedSessions,
                 period: selectedPeriod,
                 asOf: referenceDate
             )
         } else {
-            filteredSessions = store.completedSessions
+            periodSessions = store.completedSessions
+        }
+
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
+            filteredSessions = periodSessions
+            return
+        }
+        filteredSessions = periodSessions.filter { session in
+            session.title.localizedStandardContains(query)
+                || session.note.localizedStandardContains(query)
+                || session.tags.contains(where: { $0.localizedStandardContains(query) })
         }
     }
 }
@@ -349,8 +366,16 @@ private struct SessionRow: View {
                 .background(theme.accent.opacity(0.13), in: Circle())
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(session.startedAt, format: .dateTime.weekday(.abbreviated).day().month())
-                    .font(.headline)
+                if session.title.isEmpty {
+                    Text(session.startedAt, format: .dateTime.weekday(.abbreviated).day().month())
+                        .font(.headline)
+                } else {
+                    Text(session.title)
+                        .font(.headline)
+                    Text(session.startedAt, format: .dateTime.weekday(.abbreviated).day().month())
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(theme.secondaryLabel)
+                }
 
                 HStack(spacing: 5) {
                     Text(session.startedAt, format: .dateTime.hour().minute())
@@ -364,6 +389,13 @@ private struct SessionRow: View {
                 }
                 .font(.caption)
                 .foregroundStyle(theme.secondaryLabel)
+
+                if !session.tags.isEmpty {
+                    Text(session.tags.prefix(4).map { "#\($0)" }.joined(separator: "  "))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(theme.success)
+                        .lineLimit(1)
+                }
 
                 if breakDuration > 0 || overtime > 0 || premiumEarnings > 0 {
                     ViewThatFits(in: .horizontal) {

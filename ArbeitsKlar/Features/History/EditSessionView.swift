@@ -14,7 +14,17 @@ struct EditSessionView: View {
     @State private var hourlyRate: Double
     @State private var currencyCode: String
     @State private var plannedHours: Double
-    @FocusState private var isRateFocused: Bool
+    @State private var title: String
+    @State private var note: String
+    @State private var tagsText: String
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case rate
+        case title
+        case tags
+        case note
+    }
 
     init(session: WorkSession) {
         self.session = session
@@ -24,6 +34,9 @@ struct EditSessionView: View {
         _hourlyRate = State(initialValue: session.hourlyRate)
         _currencyCode = State(initialValue: session.currencyCode)
         _plannedHours = State(initialValue: session.plannedHours)
+        _title = State(initialValue: session.title)
+        _note = State(initialValue: session.note)
+        _tagsText = State(initialValue: session.tags.joined(separator: ", "))
     }
 
     var body: some View {
@@ -63,7 +76,7 @@ struct EditSessionView: View {
                         )
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
-                        .focused($isRateFocused)
+                        .focused($focusedField, equals: .rate)
                         .frame(maxWidth: 120)
                     }
 
@@ -81,6 +94,22 @@ struct EditSessionView: View {
                             }
                         }
                     }
+                }
+
+                Section {
+                    TextField("session.title.placeholder", text: $title)
+                        .textInputAutocapitalization(.sentences)
+                        .focused($focusedField, equals: .title)
+                    TextField("session.tags.placeholder", text: $tagsText)
+                        .textInputAutocapitalization(.words)
+                        .focused($focusedField, equals: .tags)
+                    TextField("session.note.placeholder", text: $note, axis: .vertical)
+                        .lineLimit(3...6)
+                        .focused($focusedField, equals: .note)
+                } header: {
+                    Text("session.section.details")
+                } footer: {
+                    Text("session.tags.help")
                 }
 
                 Section("edit.section.preview") {
@@ -116,7 +145,7 @@ struct EditSessionView: View {
 
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("common.done") { isRateFocused = false }
+                    Button("common.done") { focusedField = nil }
                 }
             }
             .onChange(of: startedAt) { clampBreakDuration() }
@@ -152,7 +181,10 @@ struct EditSessionView: View {
             currencyCode: currencyCode,
             plannedHours: plannedHours,
             breaks: previewBreaks,
-            payRules: session.payRules
+            payRules: session.payRules,
+            title: title,
+            note: note,
+            tags: parsedTags
         )
     }
 
@@ -192,11 +224,18 @@ struct EditSessionView: View {
             breakDuration: TimeInterval(breakMinutes * 60),
             hourlyRate: hourlyRate,
             currencyCode: currencyCode,
-            plannedHours: plannedHours
+            plannedHours: plannedHours,
+            title: title,
+            note: note,
+            tags: parsedTags
         )
         if didSave {
             dismiss()
         }
+    }
+
+    private var parsedTags: [String] {
+        ShiftTemplate.normalizedTags(tagsText.split(separator: ",").map(String.init))
     }
 
     private func currencyName(for code: String) -> String {
