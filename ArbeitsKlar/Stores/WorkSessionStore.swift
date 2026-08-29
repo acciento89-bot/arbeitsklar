@@ -36,6 +36,10 @@ final class WorkSessionStore {
         didSet { persist() }
     }
 
+    private(set) var paycheckAudits: [PaycheckAudit] {
+        didSet { persistPaycheckAudits() }
+    }
+
     @ObservationIgnored
     private let defaults: UserDefaults
 
@@ -46,6 +50,7 @@ final class WorkSessionStore {
     private let reminderController: ShiftReminderController
 
     private static let snapshotKey = "work_session_snapshot_v1"
+    private static let paycheckAuditsKey = "paycheck_audits_v1"
 
     init(
         defaults: UserDefaults = .standard,
@@ -54,6 +59,14 @@ final class WorkSessionStore {
         self.defaults = defaults
         self.liveActivityController = LiveActivityController(isEnabled: liveActivitiesEnabled)
         self.reminderController = ShiftReminderController()
+        if
+            let auditData = defaults.data(forKey: Self.paycheckAuditsKey),
+            let audits = try? JSONDecoder().decode([PaycheckAudit].self, from: auditData)
+        {
+            self.paycheckAudits = audits.sorted { $0.month > $1.month }
+        } else {
+            self.paycheckAudits = []
+        }
 
         if
             let data = defaults.data(forKey: Self.snapshotKey),
@@ -284,6 +297,70 @@ final class WorkSessionStore {
 
         profile = snapshot.profile
         sessions = snapshot.sessions.sorted { $0.startedAt > $1.startedAt }
+        if
+            let auditData = defaults.data(forKey: Self.paycheckAuditsKey),
+            let audits = try? JSONDecoder().decode([PaycheckAudit].self, from: auditData)
+        {
+            paycheckAudits = audits.sorted { $0.month > $1.month }
+        }
+    }
+
+    func expectedEarnings(forMonthContaining date: Date, currencyCode: String) -> Double {
+        let calendar = Calendar.autoupdatingCurrent
+        guard let interval = calendar.dateInterval(of: .month, for: date) else { return 0 }
+        return completedSessions
+            .filter {
+                $0.startedAt >= interval.start
+                    && $0.startedAt < interval.end
+                    && $0.currencyCode == currencyCode
+            }
+            .reduce(0) { $0 + $1.earnings() }
+    }
+
+    func paycheckAudit(forMonthContaining date: Date, currencyCode: String) -> PaycheckAudit? {
+        let calendar = Calendar.autoupdatingCurrent
+        guard let monthStart = calendar.dateInterval(of: .month, for: date)?.start else { return nil }
+        return paycheckAudits.first {
+            calendar.isDate($0.month, equalTo: monthStart, toGranularity: .month)
+                && $0.currencyCode == currencyCode
+        }
+    }
+
+    func savePaycheckAudit(
+        forMonthContaining date: Date,
+        actualGross: Double,
+        currencyCode: String,
+        note: String
+    ) {
+        let calendar = Calendar.autoupdatingCurrent
+        guard let monthStart = calendar.dateInterval(of: .month, for: date)?.start else { return }
+        if let index = paycheckAudits.firstIndex(where: {
+            calendar.isDate($0.month, equalTo: monthStart, toGranularity: .month)
+                && $0.currencyCode == currencyCode
+        }) {
+            paycheckAudits[index].actualGross = max(0, actualGross)
+            paycheckAudits[index].note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+            paycheckAudits[index].updatedAt = .now
+        } else {
+            paycheckAudits.append(
+                PaycheckAudit(
+                    month: monthStart,
+                    actualGross: max(0, actualGross),
+                    currencyCode: currencyCode,
+                    note: note.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+            )
+        }
+        paycheckAudits.sort { $0.month > $1.month }
+    }
+
+    func deletePaycheckAudit(forMonthContaining date: Date, currencyCode: String) {
+        let calendar = Calendar.autoupdatingCurrent
+        guard let monthStart = calendar.dateInterval(of: .month, for: date)?.start else { return }
+        paycheckAudits.removeAll {
+            calendar.isDate($0.month, equalTo: monthStart, toGranularity: .month)
+                && $0.currencyCode == currencyCode
+        }
     }
 
     func durationToday(asOf date: Date = .now) -> TimeInterval {
@@ -344,6 +421,11 @@ final class WorkSessionStore {
         let snapshot = Snapshot(profile: profile, sessions: sessions)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: Self.snapshotKey)
+    }
+
+    private func persistPaycheckAudits() {
+        guard let data = try? JSONEncoder().encode(paycheckAudits) else { return }
+        defaults.set(data, forKey: Self.paycheckAuditsKey)
     }
 }
 
@@ -459,6 +541,13 @@ extension WorkSessionStore {
             )
         }
         .sorted { $0.startedAt > $1.startedAt }
+        let expectedGross = store.expectedEarnings(forMonthContaining: .now, currencyCode: "EUR")
+        store.savePaycheckAudit(
+            forMonthContaining: .now,
+            actualGross: max(1, expectedGross - 23.5),
+            currencyCode: "EUR",
+            note: "Example discrepancy for UI testing"
+        )
         return store
     }
     #endif

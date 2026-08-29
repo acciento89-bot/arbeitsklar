@@ -193,6 +193,11 @@ private struct ProFeatureList: View {
                 systemImage: "tablecells"
             )
             ProFeatureRow(
+                title: "pro.feature.paycheck.title",
+                message: "pro.feature.paycheck.message",
+                systemImage: "doc.text.magnifyingglass"
+            )
+            ProFeatureRow(
                 title: "pro.feature.design.title",
                 message: "pro.feature.design.message",
                 systemImage: "paintpalette.fill"

@@ -35,6 +35,8 @@
 		A1000000000000000000001A /* PayRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001E /* PayRules.swift */; };
 		A1000000000000000000001B /* PayRulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001F /* PayRulesView.swift */; };
 		A1000000000000000000001C /* ShiftGoalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000021 /* ShiftGoalCard.swift */; };
+		A1000000000000000000001D /* PaycheckAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000022 /* PaycheckAudit.swift */; };
+		A1000000000000000000001E /* PaycheckAuditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000023 /* PaycheckAuditView.swift */; };
 		A10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
 		A10000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* PrivacyInfo.xcprivacy */; };
@@ -103,6 +105,8 @@
 		B1000000000000000000001E /* PayRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayRules.swift; sourceTree = "<group>"; };
 		B1000000000000000000001F /* PayRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayRulesView.swift; sourceTree = "<group>"; };
 		B10000000000000000000021 /* ShiftGoalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftGoalCard.swift; sourceTree = "<group>"; };
+		B10000000000000000000022 /* PaycheckAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaycheckAudit.swift; sourceTree = "<group>"; };
+		B10000000000000000000023 /* PaycheckAuditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaycheckAuditView.swift; sourceTree = "<group>"; };
 		B10000000000000000000020 /* ArbeitsKlar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArbeitsKlar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000001 /* ArbeitsKlarLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArbeitsKlarLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -211,6 +215,7 @@
 				B10000000000000000000019 /* HistoryAnalytics.swift */,
 				B1000000000000000000001A /* HistoryInsightsCard.swift */,
 				B1000000000000000000001B /* AddSessionView.swift */,
+				B10000000000000000000023 /* PaycheckAuditView.swift */,
 			);
 			path = History;
 			sourceTree = "<group>";
@@ -247,6 +252,7 @@
 				B10000000000000000000009 /* WorkSession.swift */,
 				B1000000000000000000000A /* WorkActivityAttributes.swift */,
 				B1000000000000000000001E /* PayRules.swift */,
+				B10000000000000000000022 /* PaycheckAudit.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -454,6 +460,8 @@
 				A1000000000000000000001A /* PayRules.swift in Sources */,
 				A1000000000000000000001B /* PayRulesView.swift in Sources */,
 				A1000000000000000000001C /* ShiftGoalCard.swift in Sources */,
+				A1000000000000000000001D /* PaycheckAudit.swift in Sources */,
+				A1000000000000000000001E /* PaycheckAuditView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

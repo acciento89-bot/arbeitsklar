@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 private enum HistorySheet: Identifiable {
     case add
     case edit(WorkSession)
+    case paycheck(Date)
     case pro
 
     var id: String {
@@ -12,6 +13,8 @@ private enum HistorySheet: Identifiable {
             "add"
         case let .edit(session):
             "edit-\(session.id)"
+        case let .paycheck(month):
+            "paycheck-\(month.timeIntervalSinceReferenceDate)"
         case .pro:
             "pro"
         }
@@ -53,6 +56,22 @@ struct HistoryView: View {
                                 .listRowInsets(EdgeInsets())
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
+
+                            if selectedPeriod == .month {
+                                Button {
+                                    presentedSheet = .paycheck(referenceDate)
+                                } label: {
+                                    PaycheckAuditCard(
+                                        expectedGross: paycheckExpectedGross,
+                                        audit: paycheckAudit,
+                                        currencyCode: store.profile.currencyCode
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                            }
                         } else {
                             Button {
                                 presentedSheet = .pro
@@ -135,6 +154,8 @@ struct HistoryView: View {
                 AddSessionView(profile: store.profile)
             case let .edit(session):
                 EditSessionView(session: session)
+            case let .paycheck(month):
+                PaycheckAuditView(month: month)
             case .pro:
                 ProView()
             }
@@ -184,6 +205,20 @@ struct HistoryView: View {
         )
     }
 
+    private var paycheckExpectedGross: Double {
+        store.expectedEarnings(
+            forMonthContaining: referenceDate,
+            currencyCode: store.profile.currencyCode
+        )
+    }
+
+    private var paycheckAudit: PaycheckAudit? {
+        store.paycheckAudit(
+            forMonthContaining: referenceDate,
+            currencyCode: store.profile.currencyCode
+        )
+    }
+
     private func openEditor(for session: WorkSession) {
         presentedSheet = purchases.isPro ? .edit(session) : .pro
     }
@@ -207,6 +242,53 @@ struct HistoryView: View {
         } else {
             filteredSessions = store.completedSessions
         }
+    }
+}
+
+private struct PaycheckAuditCard: View {
+    @Environment(AppTheme.self) private var theme
+
+    let expectedGross: Double
+    let audit: PaycheckAudit?
+    let currencyCode: String
+
+    var body: some View {
+        let difference = (audit?.actualGross ?? 0) - expectedGross
+        let resultTitle: LocalizedStringKey = difference < -0.01
+            ? "paycheck.card.missing"
+            : "paycheck.card.checked"
+
+        HStack(spacing: 14) {
+            Image(systemName: audit == nil ? "doc.text.magnifyingglass" : difference < -0.01 ? "exclamationmark.triangle.fill" : "checkmark.seal.fill")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(audit == nil ? theme.accent : difference < -0.01 ? theme.warning : theme.success)
+                .frame(width: 46, height: 46)
+                .background(theme.accent.opacity(0.12), in: Circle())
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("paycheck.card.title")
+                    .font(.headline)
+                if let audit {
+                    Text(resultTitle)
+                    .font(.caption)
+                    .foregroundStyle(theme.secondaryLabel)
+                    Text(abs(difference), format: .currency(code: currencyCode))
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                } else {
+                    Text("paycheck.card.message")
+                        .font(.subheadline)
+                        .foregroundStyle(theme.secondaryLabel)
+                }
+            }
+
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption.bold())
+                .foregroundStyle(theme.secondaryLabel)
+        }
+        .padding(17)
+        .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 
