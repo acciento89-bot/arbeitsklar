@@ -38,6 +38,7 @@ final class PurchaseManager {
     private(set) var isPro: Bool
     private(set) var isLoading = false
     private(set) var isPurchasing = false
+    private(set) var isPrepared = false
     private(set) var status: PurchaseStatus = .idle
 
     @ObservationIgnored
@@ -64,6 +65,7 @@ final class PurchaseManager {
 
         await refreshEntitlements()
         isLoading = false
+        isPrepared = true
     }
 
     func observeTransactionUpdates() async {

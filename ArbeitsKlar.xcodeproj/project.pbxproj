@@ -25,6 +25,8 @@
 		A10000000000000000000010 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* EditSessionView.swift */; };
 		A10000000000000000000011 /* ProView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* ProView.swift */; };
 		A10000000000000000000012 /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* PurchaseManager.swift */; };
+		A10000000000000000000013 /* WorkSessionCSVDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000017 /* WorkSessionCSVDocument.swift */; };
+		A10000000000000000000014 /* ShiftReminderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* ShiftReminderController.swift */; };
 		A10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
 		A10000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* PrivacyInfo.xcprivacy */; };
@@ -83,6 +85,8 @@
 		B10000000000000000000014 /* EditSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSessionView.swift; sourceTree = "<group>"; };
 		B10000000000000000000015 /* ProView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProView.swift; sourceTree = "<group>"; };
 		B10000000000000000000016 /* PurchaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseManager.swift; sourceTree = "<group>"; };
+		B10000000000000000000017 /* WorkSessionCSVDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkSessionCSVDocument.swift; sourceTree = "<group>"; };
+		B10000000000000000000018 /* ShiftReminderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftReminderController.swift; sourceTree = "<group>"; };
 		B10000000000000000000020 /* ArbeitsKlar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArbeitsKlar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000001 /* ArbeitsKlarLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArbeitsKlarLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -184,6 +188,7 @@
 			children = (
 				B10000000000000000000006 /* HistoryView.swift */,
 				B10000000000000000000014 /* EditSessionView.swift */,
+				B10000000000000000000017 /* WorkSessionCSVDocument.swift */,
 			);
 			path = History;
 			sourceTree = "<group>";
@@ -228,6 +233,7 @@
 				B1000000000000000000000B /* EarningsCalculator.swift */,
 				B1000000000000000000000C /* LiveActivityController.swift */,
 				B10000000000000000000016 /* PurchaseManager.swift */,
+				B10000000000000000000018 /* ShiftReminderController.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -406,6 +412,8 @@
 				A10000000000000000000010 /* EditSessionView.swift in Sources */,
 				A10000000000000000000011 /* ProView.swift in Sources */,
 				A10000000000000000000012 /* PurchaseManager.swift in Sources */,
+				A10000000000000000000013 /* WorkSessionCSVDocument.swift in Sources */,
+				A10000000000000000000014 /* ShiftReminderController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

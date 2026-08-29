@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum HistorySheet: Identifiable {
     case edit(WorkSession)
@@ -20,6 +21,9 @@ struct HistoryView: View {
     @Environment(PurchaseManager.self) private var purchases
     @Environment(AppTheme.self) private var theme
     @State private var presentedSheet: HistorySheet?
+    @State private var exportDocument = WorkSessionCSVDocument()
+    @State private var showsExporter = false
+    @State private var showsExportError = false
 
     var body: some View {
         Group {
@@ -86,6 +90,17 @@ struct HistoryView: View {
             }
         }
         .navigationTitle("history.title")
+        .toolbar {
+            if !store.completedSessions.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        exportHistory()
+                    } label: {
+                        Label("history.export", systemImage: "square.and.arrow.up")
+                    }
+                }
+            }
+        }
         .sheet(item: $presentedSheet) { sheet in
             switch sheet {
             case let .edit(session):
@@ -94,10 +109,34 @@ struct HistoryView: View {
                 ProView()
             }
         }
+        .fileExporter(
+            isPresented: $showsExporter,
+            document: exportDocument,
+            contentType: .commaSeparatedText,
+            defaultFilename: "ArbeitsKlar-Shifts"
+        ) { result in
+            if case .failure = result {
+                showsExportError = true
+            }
+        }
+        .alert("export.error.title", isPresented: $showsExportError) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text("export.error.message")
+        }
     }
 
     private func openEditor(for session: WorkSession) {
         presentedSheet = purchases.isPro ? .edit(session) : .pro
+    }
+
+    private func exportHistory() {
+        guard purchases.isPro else {
+            presentedSheet = .pro
+            return
+        }
+        exportDocument = WorkSessionCSVDocument(sessions: store.completedSessions)
+        showsExporter = true
     }
 }
 

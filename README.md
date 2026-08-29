@@ -12,6 +12,9 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 - Break-aware work time, earnings, and overtime calculations
 - Editable completed shifts with recalculated breaks and earnings
 - Pro-ready weekly insights
+- Pro CSV export for completed shifts
+- Two premium color themes (Aurora and Sunset)
+- Break-aware local shift-end reminders
 - Local shift history and gross-pay estimates
 - Configurable hourly rate, currency, and planned shift length
 - Lock Screen and Dynamic Island Live Activity
@@ -24,7 +27,7 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 
 StoreKit 2 support is implemented for the non-consumable product `de.kamilunavo.arbeitsklar.pro.lifetime`. The app verifies current entitlements, listens for transaction updates, supports pending purchases, and provides an explicit restore action.
 
-No product has been created in App Store Connect by this repository change. Until that non-consumable product is configured there, the paywall remains visible but purchasing stays disabled. Pro currently unlocks weekly insights and editing completed shifts.
+No product has been created in App Store Connect by this repository change. Until that non-consumable product is configured there, the paywall remains visible but purchasing stays disabled. Pro unlocks weekly insights, completed-shift editing, CSV export, premium color themes, and local shift-end reminders.
 
 ## Project structure
 

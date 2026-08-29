@@ -13,6 +13,7 @@ struct SettingsView: View {
     @Environment(AppTheme.self) private var theme
     @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @State private var showsClearConfirmation = false
+    @State private var showsReminderPermissionAlert = false
     @State private var presentedSheet: SettingsSheet?
 
     var body: some View {
@@ -35,6 +36,50 @@ struct SettingsView: View {
                     }
                 }
                 .buttonStyle(.plain)
+            }
+
+            Section("settings.section.design") {
+                ForEach(AppThemeStyle.allCases) { style in
+                    Button {
+                        select(style)
+                    } label: {
+                        HStack(spacing: 12) {
+                            ThemeSwatch(style: style)
+                            Text(style.title)
+                            Spacer()
+                            if style.requiresPro, !purchases.isPro {
+                                Image(systemName: "lock.fill")
+                                    .foregroundStyle(theme.warning)
+                            } else if theme.style == style {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(theme.success)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Section {
+                Button {
+                    toggleShiftReminder()
+                } label: {
+                    HStack(spacing: 12) {
+                        Label("settings.shift_reminder", systemImage: "bell.badge.fill")
+                        Spacer()
+                        Text(reminderStatusTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(store.profile.shiftRemindersEnabled ? theme.success : theme.secondaryLabel)
+                        Image(systemName: purchases.isPro ? "chevron.right" : "lock.fill")
+                            .font(.caption.bold())
+                            .foregroundStyle(purchases.isPro ? theme.secondaryLabel : theme.warning)
+                    }
+                }
+                .buttonStyle(.plain)
+            } header: {
+                Text("settings.section.automation")
+            } footer: {
+                Text("settings.shift_reminder.note")
             }
 
             Section("settings.section.pay") {
@@ -140,6 +185,11 @@ struct SettingsView: View {
         } message: {
             Text("settings.clear_confirm.message")
         }
+        .alert("reminder.permission.title", isPresented: $showsReminderPermissionAlert) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text("reminder.permission.message")
+        }
     }
 
     private var version: String {
@@ -151,6 +201,51 @@ struct SettingsView: View {
             return "settings.pro.unlocked"
         }
         return "settings.pro.discover"
+    }
+
+    private var reminderStatusTitle: LocalizedStringKey {
+        store.profile.shiftRemindersEnabled ? "common.on" : "common.off"
+    }
+
+    private func select(_ style: AppThemeStyle) {
+        if style.requiresPro, !purchases.isPro {
+            presentedSheet = .pro
+        } else {
+            theme.style = style
+        }
+    }
+
+    private func toggleShiftReminder() {
+        guard purchases.isPro else {
+            presentedSheet = .pro
+            return
+        }
+
+        Task {
+            let targetValue = !store.profile.shiftRemindersEnabled
+            let succeeded = await store.setShiftRemindersEnabled(targetValue)
+            if targetValue, !succeeded {
+                showsReminderPermissionAlert = true
+            }
+        }
+    }
+}
+
+private struct ThemeSwatch: View {
+    let style: AppThemeStyle
+
+    var body: some View {
+        LinearGradient(
+            colors: style.swatchColors,
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .frame(width: 38, height: 38)
+        .clipShape(Circle())
+        .overlay {
+            Circle().stroke(.white.opacity(0.16), lineWidth: 1)
+        }
+        .accessibilityHidden(true)
     }
 }
 

@@ -30,6 +30,8 @@ enum AppTab: String, CaseIterable, Identifiable {
 
 @MainActor
 struct AppView: View {
+    @Environment(WorkSessionStore.self) private var store
+    @Environment(PurchaseManager.self) private var purchases
     @Environment(AppTheme.self) private var theme
     @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @State private var selectedTab: AppTab = .today
@@ -68,8 +70,22 @@ struct AppView: View {
         .onChange(of: hasCompletedOnboarding) { _, isCompleted in
             showsOnboarding = !isCompleted
         }
+        .onChange(of: purchases.isPrepared, initial: true) {
+            enforceProEntitlement()
+        }
+        .onChange(of: purchases.isPro) {
+            enforceProEntitlement()
+        }
         .fullScreenCover(isPresented: $showsOnboarding) {
             OnboardingView()
+        }
+    }
+
+    private func enforceProEntitlement() {
+        guard purchases.isPrepared else { return }
+        theme.enforceEntitlement(isPro: purchases.isPro)
+        if !purchases.isPro, store.profile.shiftRemindersEnabled {
+            Task { await store.setShiftRemindersEnabled(false) }
         }
     }
 }

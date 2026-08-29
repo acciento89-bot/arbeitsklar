@@ -188,6 +188,21 @@ private struct ProFeatureList: View {
                 systemImage: "square.and.pencil"
             )
             ProFeatureRow(
+                title: "pro.feature.export.title",
+                message: "pro.feature.export.message",
+                systemImage: "tablecells"
+            )
+            ProFeatureRow(
+                title: "pro.feature.design.title",
+                message: "pro.feature.design.message",
+                systemImage: "paintpalette.fill"
+            )
+            ProFeatureRow(
+                title: "pro.feature.reminder.title",
+                message: "pro.feature.reminder.message",
+                systemImage: "bell.badge.fill"
+            )
+            ProFeatureRow(
                 title: "pro.feature.once.title",
                 message: "pro.feature.once.message",
                 systemImage: "infinity"

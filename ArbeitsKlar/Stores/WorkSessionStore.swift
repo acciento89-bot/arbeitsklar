@@ -34,6 +34,9 @@ final class WorkSessionStore {
     @ObservationIgnored
     private let liveActivityController: LiveActivityController
 
+    @ObservationIgnored
+    private let reminderController: ShiftReminderController
+
     private static let snapshotKey = "work_session_snapshot_v1"
 
     init(
@@ -42,6 +45,7 @@ final class WorkSessionStore {
     ) {
         self.defaults = defaults
         self.liveActivityController = LiveActivityController(isEnabled: liveActivitiesEnabled)
+        self.reminderController = ShiftReminderController()
 
         if
             let data = defaults.data(forKey: Self.snapshotKey),
@@ -65,7 +69,7 @@ final class WorkSessionStore {
             .sorted { $0.startedAt > $1.startedAt }
     }
 
-    func startShift(at date: Date = .now) {
+    func startShift(at date: Date = .now) async {
         guard activeSession == nil else { return }
 
         let session = WorkSession(
@@ -76,6 +80,7 @@ final class WorkSessionStore {
         )
         sessions.insert(session, at: 0)
         liveActivityController.start(for: session)
+        await scheduleReminderIfNeeded(for: session, asOf: date)
     }
 
     func pauseShift(at date: Date = .now) async {
@@ -87,6 +92,7 @@ final class WorkSessionStore {
             WorkBreak(startedAt: max(date, session.startedAt))
         )
         sessions[index] = session
+        reminderController.cancel(for: session.id)
         await liveActivityController.update(for: session, asOf: date)
     }
 
@@ -99,6 +105,7 @@ final class WorkSessionStore {
         session.breaks[breakIndex].endedAt = max(date, breakStart)
         sessions[index] = session
         await liveActivityController.update(for: session, asOf: date)
+        await scheduleReminderIfNeeded(for: session, asOf: date)
     }
 
     func stopShift(at date: Date = .now) async {
@@ -112,7 +119,26 @@ final class WorkSessionStore {
         }
         completed.endedAt = endedAt
         sessions[index] = completed
+        reminderController.cancel(for: completed.id)
         await liveActivityController.end(for: completed, at: date)
+    }
+
+    @discardableResult
+    func setShiftRemindersEnabled(_ isEnabled: Bool) async -> Bool {
+        if isEnabled {
+            guard await reminderController.requestAuthorization() else {
+                profile.shiftRemindersEnabled = false
+                return false
+            }
+            profile.shiftRemindersEnabled = true
+            if let activeSession, !activeSession.isPaused {
+                await scheduleReminderIfNeeded(for: activeSession)
+            }
+        } else {
+            profile.shiftRemindersEnabled = false
+            await reminderController.cancelAll()
+        }
+        return true
     }
 
     func refreshLiveActivity(asOf date: Date = .now) async {
@@ -228,6 +254,12 @@ final class WorkSessionStore {
         let calendar = Calendar.autoupdatingCurrent
         let startOfDay = calendar.startOfDay(for: date)
         return sessions.filter { $0.startedAt >= startOfDay && $0.startedAt <= date }
+    }
+
+    private func scheduleReminderIfNeeded(for session: WorkSession, asOf date: Date = .now) async {
+        guard profile.shiftRemindersEnabled, !session.isPaused else { return }
+        let remaining = max(0, session.plannedHours * 3_600 - session.duration(asOf: date))
+        await reminderController.schedule(for: session, remainingWorkTime: remaining)
     }
 
     private func persist() {

@@ -244,7 +244,7 @@ private struct LiveEarningsCard: View {
             }
         } else {
             Button {
-                store.startShift()
+                Task { await store.startShift() }
             } label: {
                 Label("today.start_shift", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
