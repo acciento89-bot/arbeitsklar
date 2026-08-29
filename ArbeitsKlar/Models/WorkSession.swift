@@ -30,6 +30,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
     var currencyCode: String
     var plannedHours: Double
     var breaks: [WorkBreak]
+    var payRules: PayRules
 
     init(
         id: UUID = UUID(),
@@ -38,7 +39,8 @@ struct WorkSession: Codable, Hashable, Identifiable {
         hourlyRate: Double,
         currencyCode: String,
         plannedHours: Double = 8,
-        breaks: [WorkBreak] = []
+        breaks: [WorkBreak] = [],
+        payRules: PayRules = .none
     ) {
         self.id = id
         self.startedAt = startedAt
@@ -47,6 +49,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
         self.currencyCode = currencyCode
         self.plannedHours = plannedHours
         self.breaks = breaks
+        self.payRules = payRules
     }
 
     var isActive: Bool { endedAt == nil }
@@ -61,6 +64,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
         case currencyCode
         case plannedHours
         case breaks
+        case payRules
     }
 
     init(from decoder: Decoder) throws {
@@ -72,6 +76,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
         currencyCode = try container.decode(String.self, forKey: .currencyCode)
         plannedHours = try container.decodeIfPresent(Double.self, forKey: .plannedHours) ?? 8
         breaks = try container.decodeIfPresent([WorkBreak].self, forKey: .breaks) ?? []
+        payRules = try container.decodeIfPresent(PayRules.self, forKey: .payRules) ?? .none
     }
 
     func duration(asOf date: Date = .now) -> TimeInterval {
@@ -95,9 +100,52 @@ struct WorkSession: Codable, Hashable, Identifiable {
     }
 
     func earnings(asOf date: Date = .now) -> Double {
-        EarningsCalculator.earnings(
-            hourlyRate: hourlyRate,
-            elapsedTime: duration(asOf: date)
-        )
+        earningsBreakdown(asOf: date).totalEarnings
+    }
+
+    func earningsBreakdown(asOf date: Date = .now) -> EarningsBreakdown {
+        EarningsCalculator.breakdown(for: self, asOf: date)
+    }
+
+    func projectedDate(forEarnings target: Double, asOf date: Date = .now) -> Date? {
+        EarningsCalculator.projectedDate(forEarnings: target, session: self, asOf: date)
+    }
+
+    func projectedEarningsForPlannedDuration(asOf date: Date = .now) -> Double {
+        EarningsCalculator.projectedEarningsForPlannedDuration(session: self, asOf: date)
+    }
+
+    func workIntervals(asOf date: Date = .now) -> [DateInterval] {
+        let effectiveEnd = max(startedAt, endedAt ?? date)
+        guard effectiveEnd > startedAt else { return [] }
+
+        let sortedBreaks = breaks
+            .map { workBreak in
+                let intervalStart = min(effectiveEnd, max(startedAt, workBreak.startedAt))
+                let intervalEnd = max(
+                    intervalStart,
+                    min(effectiveEnd, max(workBreak.startedAt, workBreak.endedAt ?? date))
+                )
+                return DateInterval(
+                    start: intervalStart,
+                    end: intervalEnd
+                )
+            }
+            .filter { $0.duration > 0 }
+            .sorted { $0.start < $1.start }
+
+        var intervals: [DateInterval] = []
+        var cursor = startedAt
+        for workBreak in sortedBreaks {
+            if workBreak.start > cursor {
+                intervals.append(DateInterval(start: cursor, end: min(workBreak.start, effectiveEnd)))
+            }
+            cursor = max(cursor, workBreak.end)
+            if cursor >= effectiveEnd { break }
+        }
+        if cursor < effectiveEnd {
+            intervals.append(DateInterval(start: cursor, end: effectiveEnd))
+        }
+        return intervals.filter { $0.duration > 0 }
     }
 }

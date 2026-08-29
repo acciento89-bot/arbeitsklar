@@ -25,11 +25,13 @@ struct WorkSessionCSVDocument: FileDocument {
     private static func makeCSV(sessions: [WorkSession]) -> String {
         let header = [
             "start", "end", "work_seconds", "break_seconds", "hourly_rate",
-            "currency", "planned_hours", "earnings"
+            "currency", "planned_hours", "base_earnings", "overtime_premium",
+            "night_premium", "weekend_premium", "total_earnings"
         ].joined(separator: ",")
 
         let dateFormatter = ISO8601DateFormatter()
         let rows = sessions.map { session in
+            let breakdown = session.earningsBreakdown()
             [
                 dateFormatter.string(from: session.startedAt),
                 session.endedAt.map(dateFormatter.string(from:)) ?? "",
@@ -38,7 +40,11 @@ struct WorkSessionCSVDocument: FileDocument {
                 decimal(session.hourlyRate),
                 session.currencyCode,
                 decimal(session.plannedHours),
-                decimal(session.earnings())
+                decimal(breakdown.baseEarnings),
+                decimal(breakdown.overtimePremium),
+                decimal(breakdown.nightPremium),
+                decimal(breakdown.weekendPremium),
+                decimal(breakdown.totalEarnings)
             ]
             .map(escape)
             .joined(separator: ",")

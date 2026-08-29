@@ -90,15 +90,13 @@ struct EditSessionView: View {
                     }
 
                     LabeledContent("edit.earnings") {
-                        Text(
-                            EarningsCalculator.earnings(
-                                hourlyRate: hourlyRate,
-                                elapsedTime: adjustedWorkDuration
-                            ),
-                            format: .currency(code: currencyCode)
-                        )
+                        Text(previewBreakdown.totalEarnings, format: .currency(code: currencyCode))
                         .fontWeight(.semibold)
                         .monospacedDigit()
+                    }
+
+                    if previewBreakdown.premiumEarnings > 0 {
+                        premiumRows(previewBreakdown)
                     }
                 }
             }
@@ -140,6 +138,45 @@ struct EditSessionView: View {
 
     private var isValid: Bool {
         endedAt > startedAt && hourlyRate > 0 && plannedHours > 0 && adjustedWorkDuration >= 60
+    }
+
+    private var previewSession: WorkSession {
+        let breakStart = startedAt.addingTimeInterval(max(0, (totalDuration - TimeInterval(breakMinutes * 60)) / 2))
+        let previewBreaks = breakMinutes > 0
+            ? [WorkBreak(startedAt: breakStart, endedAt: breakStart.addingTimeInterval(TimeInterval(breakMinutes * 60)))]
+            : []
+        return WorkSession(
+            startedAt: startedAt,
+            endedAt: endedAt,
+            hourlyRate: hourlyRate,
+            currencyCode: currencyCode,
+            plannedHours: plannedHours,
+            breaks: previewBreaks,
+            payRules: session.payRules
+        )
+    }
+
+    private var previewBreakdown: EarningsBreakdown {
+        previewSession.earningsBreakdown()
+    }
+
+    @ViewBuilder
+    private func premiumRows(_ breakdown: EarningsBreakdown) -> some View {
+        if breakdown.overtimePremium > 0 {
+            LabeledContent("earnings.overtime_premium") {
+                Text(breakdown.overtimePremium, format: .currency(code: currencyCode)).monospacedDigit()
+            }
+        }
+        if breakdown.nightPremium > 0 {
+            LabeledContent("earnings.night_premium") {
+                Text(breakdown.nightPremium, format: .currency(code: currencyCode)).monospacedDigit()
+            }
+        }
+        if breakdown.weekendPremium > 0 {
+            LabeledContent("earnings.weekend_premium") {
+                Text(breakdown.weekendPremium, format: .currency(code: currencyCode)).monospacedDigit()
+            }
+        }
     }
 
     private func clampBreakDuration() {

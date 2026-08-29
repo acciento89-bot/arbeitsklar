@@ -32,6 +32,9 @@
 		A10000000000000000000017 /* AddSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B /* AddSessionView.swift */; };
 		A10000000000000000000018 /* MonthlyGoalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* MonthlyGoalCard.swift */; };
 		A10000000000000000000019 /* ShiftAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001D /* ShiftAppIntents.swift */; };
+		A1000000000000000000001A /* PayRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001E /* PayRules.swift */; };
+		A1000000000000000000001B /* PayRulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001F /* PayRulesView.swift */; };
+		A1000000000000000000001C /* ShiftGoalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000021 /* ShiftGoalCard.swift */; };
 		A10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
 		A10000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* PrivacyInfo.xcprivacy */; };
@@ -97,6 +100,9 @@
 		B1000000000000000000001B /* AddSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionView.swift; sourceTree = "<group>"; };
 		B1000000000000000000001C /* MonthlyGoalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyGoalCard.swift; sourceTree = "<group>"; };
 		B1000000000000000000001D /* ShiftAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftAppIntents.swift; sourceTree = "<group>"; };
+		B1000000000000000000001E /* PayRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayRules.swift; sourceTree = "<group>"; };
+		B1000000000000000000001F /* PayRulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayRulesView.swift; sourceTree = "<group>"; };
+		B10000000000000000000021 /* ShiftGoalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftGoalCard.swift; sourceTree = "<group>"; };
 		B10000000000000000000020 /* ArbeitsKlar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArbeitsKlar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000001 /* ArbeitsKlarLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArbeitsKlarLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -191,6 +197,7 @@
 			children = (
 				B10000000000000000000005 /* TodayView.swift */,
 				B1000000000000000000001C /* MonthlyGoalCard.swift */,
+				B10000000000000000000021 /* ShiftGoalCard.swift */,
 			);
 			path = Today;
 			sourceTree = "<group>";
@@ -212,6 +219,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000007 /* SettingsView.swift */,
+				B1000000000000000000001F /* PayRulesView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -238,6 +246,7 @@
 				B10000000000000000000008 /* PayProfile.swift */,
 				B10000000000000000000009 /* WorkSession.swift */,
 				B1000000000000000000000A /* WorkActivityAttributes.swift */,
+				B1000000000000000000001E /* PayRules.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -442,6 +451,9 @@
 				A10000000000000000000017 /* AddSessionView.swift in Sources */,
 				A10000000000000000000018 /* MonthlyGoalCard.swift in Sources */,
 				A10000000000000000000019 /* ShiftAppIntents.swift in Sources */,
+				A1000000000000000000001A /* PayRules.swift in Sources */,
+				A1000000000000000000001B /* PayRulesView.swift in Sources */,
+				A1000000000000000000001C /* ShiftGoalCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

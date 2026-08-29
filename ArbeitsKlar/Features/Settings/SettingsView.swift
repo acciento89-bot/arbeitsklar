@@ -2,6 +2,7 @@ import SwiftUI
 
 private enum SettingsSheet: String, Identifiable {
     case pro
+    case payRules
 
     var id: String { rawValue }
 }
@@ -121,6 +122,22 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                Button {
+                    presentedSheet = .payRules
+                } label: {
+                    HStack(spacing: 12) {
+                        Label("settings.pay_rules", systemImage: "function")
+                        Spacer()
+                        Text(store.profile.payRules.hasPremiums ? "common.on" : "common.off")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(store.profile.payRules.hasPremiums ? theme.success : theme.secondaryLabel)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(theme.secondaryLabel)
+                    }
+                }
+                .buttonStyle(.plain)
             }
 
             Section {
@@ -138,6 +155,24 @@ struct SettingsView: View {
                             .foregroundStyle(theme.secondaryLabel)
                     }
                 }
+
+                LabeledContent("settings.shift_goal") {
+                    HStack(spacing: 5) {
+                        TextField(
+                            "settings.shift_goal",
+                            value: $store.profile.shiftEarningsGoal,
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 110)
+                        Text(store.profile.currencyCode)
+                            .foregroundStyle(theme.secondaryLabel)
+                    }
+                }
+
+                TextField("settings.shift_goal_title", text: $store.profile.shiftGoalTitle)
+                    .textInputAutocapitalization(.sentences)
             } header: {
                 Text("settings.section.goal")
             } footer: {
@@ -192,6 +227,8 @@ struct SettingsView: View {
             switch sheet {
             case .pro:
                 ProView()
+            case .payRules:
+                PayRulesView()
             }
         }
         .confirmationDialog(
@@ -210,6 +247,10 @@ struct SettingsView: View {
             Button("common.ok", role: .cancel) {}
         } message: {
             Text("reminder.permission.message")
+        }
+        .onDisappear {
+            store.profile.monthlyEarningsGoal = max(0, store.profile.monthlyEarningsGoal)
+            store.profile.shiftEarningsGoal = max(0, store.profile.shiftEarningsGoal)
         }
     }
 

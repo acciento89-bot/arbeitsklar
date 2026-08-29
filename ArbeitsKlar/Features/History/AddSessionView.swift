@@ -12,6 +12,7 @@ struct AddSessionView: View {
     @State private var hourlyRate: Double
     @State private var currencyCode: String
     @State private var plannedHours: Double
+    private let payRules: PayRules
     @FocusState private var isRateFocused: Bool
 
     init(profile: PayProfile) {
@@ -21,6 +22,7 @@ struct AddSessionView: View {
         _hourlyRate = State(initialValue: profile.hourlyRate)
         _currencyCode = State(initialValue: profile.currencyCode)
         _plannedHours = State(initialValue: profile.plannedHours)
+        payRules = profile.payRules
     }
 
     var body: some View {
@@ -72,12 +74,16 @@ struct AddSessionView: View {
                         Text(WorkDurationFormatter.string(from: adjustedWorkDuration)).monospacedDigit()
                     }
                     LabeledContent("edit.earnings") {
-                        Text(
-                            EarningsCalculator.earnings(hourlyRate: hourlyRate, elapsedTime: adjustedWorkDuration),
-                            format: .currency(code: currencyCode)
-                        )
+                        Text(previewBreakdown.totalEarnings, format: .currency(code: currencyCode))
                         .fontWeight(.semibold)
                         .monospacedDigit()
+                    }
+
+                    if previewBreakdown.premiumEarnings > 0 {
+                        LabeledContent("earnings.premiums") {
+                            Text(previewBreakdown.premiumEarnings, format: .currency(code: currencyCode))
+                                .monospacedDigit()
+                        }
                     }
                 }
             }
@@ -107,6 +113,23 @@ struct AddSessionView: View {
     private var maximumBreakMinutes: Int { max(0, Int(totalDuration / 60) - 1) }
     private var isValid: Bool { endedAt > startedAt && hourlyRate > 0 && plannedHours > 0 && adjustedWorkDuration >= 60 }
 
+    private var previewBreakdown: EarningsBreakdown {
+        let breakStart = startedAt.addingTimeInterval(max(0, (totalDuration - TimeInterval(breakMinutes * 60)) / 2))
+        let previewBreaks = breakMinutes > 0
+            ? [WorkBreak(startedAt: breakStart, endedAt: breakStart.addingTimeInterval(TimeInterval(breakMinutes * 60)))]
+            : []
+        let previewSession = WorkSession(
+            startedAt: startedAt,
+            endedAt: endedAt,
+            hourlyRate: hourlyRate,
+            currencyCode: currencyCode,
+            plannedHours: plannedHours,
+            breaks: previewBreaks,
+            payRules: payRules
+        )
+        return previewSession.earningsBreakdown()
+    }
+
     private func clampBreakDuration() {
         breakMinutes = min(breakMinutes, maximumBreakMinutes)
     }
@@ -119,7 +142,8 @@ struct AddSessionView: View {
             breakDuration: TimeInterval(breakMinutes * 60),
             hourlyRate: hourlyRate,
             currencyCode: currencyCode,
-            plannedHours: plannedHours
+            plannedHours: plannedHours,
+            payRules: payRules
         ) {
             dismiss()
         }

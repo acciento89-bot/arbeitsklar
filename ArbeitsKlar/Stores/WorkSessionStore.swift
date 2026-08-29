@@ -84,7 +84,8 @@ final class WorkSessionStore {
             startedAt: date,
             hourlyRate: profile.hourlyRate,
             currencyCode: profile.currencyCode,
-            plannedHours: profile.plannedHours
+            plannedHours: profile.plannedHours,
+            payRules: profile.payRules
         )
         sessions.insert(session, at: 0)
         liveActivityController.start(for: session)
@@ -165,7 +166,8 @@ final class WorkSessionStore {
         breakDuration: TimeInterval,
         hourlyRate: Double,
         currencyCode: String,
-        plannedHours: Double
+        plannedHours: Double,
+        payRules: PayRules
     ) -> Bool {
         guard endedAt > startedAt, hourlyRate > 0, plannedHours > 0 else {
             return false
@@ -194,7 +196,8 @@ final class WorkSessionStore {
                 hourlyRate: hourlyRate,
                 currencyCode: currencyCode,
                 plannedHours: plannedHours,
-                breaks: breaks
+                breaks: breaks,
+                payRules: payRules
             )
         )
         sessions.sort { $0.startedAt > $1.startedAt }
@@ -350,7 +353,15 @@ extension WorkSessionStore {
         let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         let store = WorkSessionStore(defaults: defaults, liveActivitiesEnabled: false)
 
-        store.profile = PayProfile(hourlyRate: 24.5, currencyCode: "EUR", plannedHours: 8)
+        store.profile = PayProfile(
+            hourlyRate: 24.5,
+            currencyCode: "EUR",
+            plannedHours: 8,
+            monthlyEarningsGoal: 3_500,
+            shiftEarningsGoal: 120,
+            shiftGoalTitle: "Weekend trip",
+            payRules: PayRules(overtimeMultiplier: 1.25, nightBonusPercent: 20, weekendBonusPercent: 30)
+        )
         store.sessions = [
             WorkSession(
                 startedAt: .now.addingTimeInterval(-2_700),
@@ -362,7 +373,8 @@ extension WorkSessionStore {
                         startedAt: .now.addingTimeInterval(-1_800),
                         endedAt: .now.addingTimeInterval(-1_500)
                     )
-                ]
+                ],
+                payRules: store.profile.payRules
             ),
             WorkSession(
                 startedAt: .now.addingTimeInterval(-86_400),
@@ -380,14 +392,22 @@ extension WorkSessionStore {
         let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         let store = WorkSessionStore(defaults: defaults, liveActivitiesEnabled: false)
 
-        store.profile = PayProfile(hourlyRate: 24.5, currencyCode: "EUR", plannedHours: 8)
+        store.profile = PayProfile(
+            hourlyRate: 24.5,
+            currencyCode: "EUR",
+            plannedHours: 8,
+            shiftEarningsGoal: 120,
+            shiftGoalTitle: "Weekend trip",
+            payRules: PayRules(overtimeMultiplier: 1.25, nightBonusPercent: 20, weekendBonusPercent: 30)
+        )
         store.sessions = [
             WorkSession(
                 startedAt: .now.addingTimeInterval(-3_600),
                 hourlyRate: 24.5,
                 currencyCode: "EUR",
                 plannedHours: 8,
-                breaks: [WorkBreak(startedAt: .now.addingTimeInterval(-600))]
+                breaks: [WorkBreak(startedAt: .now.addingTimeInterval(-600))],
+                payRules: store.profile.payRules
             )
         ]
         return store
@@ -400,7 +420,15 @@ extension WorkSessionStore {
         let store = WorkSessionStore(defaults: defaults, liveActivitiesEnabled: false)
         let calendar = Calendar.autoupdatingCurrent
 
-        store.profile = PayProfile(hourlyRate: 24.5, currencyCode: "EUR", plannedHours: 8)
+        store.profile = PayProfile(
+            hourlyRate: 24.5,
+            currencyCode: "EUR",
+            plannedHours: 8,
+            monthlyEarningsGoal: 3_500,
+            shiftEarningsGoal: 150,
+            shiftGoalTitle: "Holiday fund",
+            payRules: PayRules(overtimeMultiplier: 1.25, nightBonusPercent: 20, weekendBonusPercent: 30)
+        )
         store.sessions = (0..<70).compactMap { dayOffset in
             guard
                 let day = calendar.date(byAdding: .day, value: -dayOffset, to: .now),
@@ -426,7 +454,8 @@ extension WorkSessionStore {
                         startedAt: breakStart,
                         endedAt: breakStart.addingTimeInterval(breakDuration)
                     )
-                ]
+                ],
+                payRules: store.profile.payRules
             )
         }
         .sorted { $0.startedAt > $1.startedAt }

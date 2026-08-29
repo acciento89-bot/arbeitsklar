@@ -6,19 +6,28 @@ struct PayProfile: Codable, Hashable {
     var plannedHours: Double
     var shiftRemindersEnabled: Bool
     var monthlyEarningsGoal: Double
+    var shiftEarningsGoal: Double
+    var shiftGoalTitle: String
+    var payRules: PayRules
 
     init(
         hourlyRate: Double,
         currencyCode: String,
         plannedHours: Double,
         shiftRemindersEnabled: Bool = false,
-        monthlyEarningsGoal: Double = 0
+        monthlyEarningsGoal: Double = 0,
+        shiftEarningsGoal: Double = 0,
+        shiftGoalTitle: String = "",
+        payRules: PayRules = .none
     ) {
         self.hourlyRate = hourlyRate
         self.currencyCode = currencyCode
         self.plannedHours = plannedHours
         self.shiftRemindersEnabled = shiftRemindersEnabled
         self.monthlyEarningsGoal = monthlyEarningsGoal
+        self.shiftEarningsGoal = shiftEarningsGoal
+        self.shiftGoalTitle = shiftGoalTitle
+        self.payRules = payRules
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -27,6 +36,9 @@ struct PayProfile: Codable, Hashable {
         case plannedHours
         case shiftRemindersEnabled
         case monthlyEarningsGoal
+        case shiftEarningsGoal
+        case shiftGoalTitle
+        case payRules
     }
 
     init(from decoder: Decoder) throws {
@@ -36,6 +48,9 @@ struct PayProfile: Codable, Hashable {
         plannedHours = try container.decode(Double.self, forKey: .plannedHours)
         shiftRemindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .shiftRemindersEnabled) ?? false
         monthlyEarningsGoal = try container.decodeIfPresent(Double.self, forKey: .monthlyEarningsGoal) ?? 0
+        shiftEarningsGoal = try container.decodeIfPresent(Double.self, forKey: .shiftEarningsGoal) ?? 0
+        shiftGoalTitle = try container.decodeIfPresent(String.self, forKey: .shiftGoalTitle) ?? ""
+        payRules = try container.decodeIfPresent(PayRules.self, forKey: .payRules) ?? .none
     }
 
     static let supportedCurrencyCodes = [

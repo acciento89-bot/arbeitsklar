@@ -257,6 +257,7 @@ private struct SessionRow: View {
     var body: some View {
         let breakDuration = session.breakDuration()
         let overtime = session.overtime()
+        let premiumEarnings = session.earningsBreakdown().premiumEarnings
 
         HStack(spacing: 14) {
             Image(systemName: "briefcase.fill")
@@ -282,21 +283,20 @@ private struct SessionRow: View {
                 .font(.caption)
                 .foregroundStyle(theme.secondaryLabel)
 
-                if breakDuration > 0 || overtime > 0 {
-                    HStack(spacing: 8) {
-                        if breakDuration > 0 {
-                            SessionStatPill(
-                                title: "history.breaks",
-                                value: WorkDurationFormatter.string(from: breakDuration),
-                                systemImage: "cup.and.saucer.fill"
+                if breakDuration > 0 || overtime > 0 || premiumEarnings > 0 {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 8) {
+                            statPills(
+                                breakDuration: breakDuration,
+                                overtime: overtime,
+                                premiumEarnings: premiumEarnings
                             )
                         }
-
-                        if overtime > 0 {
-                            SessionStatPill(
-                                title: "history.overtime",
-                                value: WorkDurationFormatter.string(from: overtime),
-                                systemImage: "clock.badge.exclamationmark"
+                        VStack(alignment: .leading, spacing: 6) {
+                            statPills(
+                                breakDuration: breakDuration,
+                                overtime: overtime,
+                                premiumEarnings: premiumEarnings
                             )
                         }
                     }
@@ -311,6 +311,35 @@ private struct SessionRow: View {
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func statPills(
+        breakDuration: TimeInterval,
+        overtime: TimeInterval,
+        premiumEarnings: Double
+    ) -> some View {
+        if breakDuration > 0 {
+            SessionStatPill(
+                title: "history.breaks",
+                value: WorkDurationFormatter.string(from: breakDuration),
+                systemImage: "cup.and.saucer.fill"
+            )
+        }
+        if overtime > 0 {
+            SessionStatPill(
+                title: "history.overtime",
+                value: WorkDurationFormatter.string(from: overtime),
+                systemImage: "clock.badge.exclamationmark"
+            )
+        }
+        if premiumEarnings > 0 {
+            SessionStatPill(
+                title: "earnings.premiums",
+                value: premiumEarnings.formatted(.currency(code: session.currencyCode)),
+                systemImage: "sparkles"
+            )
+        }
     }
 }
 

@@ -41,6 +41,16 @@ struct TodayView: View {
                     }
                 }
 
+                if store.profile.shiftEarningsGoal > 0 {
+                    if store.activeSession != nil {
+                        TimelineView(.periodic(from: .now, by: 5)) { timeline in
+                            ShiftGoalCard(date: timeline.date)
+                        }
+                    } else {
+                        ShiftGoalCard(date: .now)
+                    }
+                }
+
                 privacyNote
             }
             .padding(.horizontal, 20)
@@ -87,10 +97,14 @@ struct TodayView: View {
         let duration = store.durationToday(asOf: date)
         let breakDuration = store.breakDurationToday(asOf: date)
         let overtime = store.overtimeToday(asOf: date)
-        let projection = EarningsCalculator.projectedEarnings(
+        let projectionSession = active ?? WorkSession(
+            startedAt: date,
             hourlyRate: rate,
-            plannedHours: active?.plannedHours ?? store.profile.plannedHours
+            currencyCode: currency,
+            plannedHours: store.profile.plannedHours,
+            payRules: store.profile.payRules
         )
+        let projection = projectionSession.projectedEarningsForPlannedDuration(asOf: date)
 
         return LazyVGrid(columns: columns, spacing: 12) {
             MetricCard("today.metric.duration", systemImage: "timer") {
@@ -136,6 +150,7 @@ private struct LiveEarningsCard: View {
         let session = store.activeSession
         let currency = session?.currencyCode ?? store.profile.currencyCode
         let amount = session?.earnings(asOf: date) ?? store.earningsToday(asOf: date)
+        let premiumEarnings = session?.earningsBreakdown(asOf: date).premiumEarnings ?? 0
         let hourlyRate = session?.hourlyRate ?? store.profile.hourlyRate
         let progress = min(
             (session?.duration(asOf: date) ?? 0) / max((session?.plannedHours ?? store.profile.plannedHours) * 3_600, 1),
@@ -174,6 +189,17 @@ private struct LiveEarningsCard: View {
                     .lineLimit(1)
                     .contentTransition(.numericText(value: amount))
                     .accessibilityLabel("today.earned")
+
+                if premiumEarnings > 0 {
+                    Label {
+                        Text(premiumEarnings, format: .currency(code: currency))
+                    } icon: {
+                        Image(systemName: "sparkles")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .accessibilityLabel("earnings.premiums")
+                }
             }
 
             HStack(spacing: 18) {

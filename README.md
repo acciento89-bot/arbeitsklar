@@ -13,6 +13,9 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 - Editable completed shifts with recalculated breaks and earnings
 - Manual completed-shift entry for forgotten or imported workdays (Pro)
 - Configurable monthly gross-earnings goal with live progress
+- Motivational per-shift goal with a live, premium-aware time-to-goal forecast
+- Transparent base-pay, overtime, night, and weekend premium breakdowns
+- Configurable overtime multiplier and local night-work window
 - Siri and Shortcuts actions to start, pause, resume, and end a shift
 - Pro week, month, and all-time insights with an earnings chart
 - Pro CSV export for completed shifts
@@ -61,6 +64,12 @@ The main App ID already exists. Automatic signing can create the extension ident
 All user-facing copy lives in ArbeitsKlar/Resources/Localizable.xcstrings. English is the source language and German is fully translated. Add another locale in Xcode’s String Catalog editor; feature code does not need to change.
 
 Currency, date, time, decimal, and duration formatting use the user’s current locale. Do not build localized sentences by concatenating translated fragments.
+
+## Pay intelligence
+
+Each shift snapshots the active pay rules when it starts, so changing settings later does not rewrite historical earnings. Base pay, overtime premiums after the planned shift duration, night premiums inside the configured local-time window, and weekend premiums are calculated separately and may stack. The history, analytics, monthly goal, Live Activity, manual-entry preview, edit preview, and CSV export all use the same calculation engine.
+
+All amounts are gross estimates. Tax, collective-agreement, holiday, and country-specific legal rules are intentionally not inferred automatically.
 
 ## Live Activity behavior
 
