@@ -81,7 +81,11 @@ struct OnboardingView: View {
                     finishOnboarding()
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(theme.secondaryLabel)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 8)
+                .background(.white.opacity(0.1), in: Capsule())
+                .accessibilityHint("onboarding.skip.hint")
             }
         }
         .padding(.horizontal, 24)

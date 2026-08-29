@@ -239,6 +239,7 @@ struct SettingsView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .contentMargins(.bottom, 96, for: .scrollContent)
         .background(theme.background)
         .navigationTitle("settings.title")
         .sheet(item: $presentedSheet) { sheet in

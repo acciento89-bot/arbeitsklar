@@ -59,7 +59,7 @@ struct AppView: View {
             .tag(AppTab.planner)
 
             NavigationStack {
-                HistoryView()
+                HistoryView(selectedTab: $selectedTab)
             }
             .tabItem {
                 Label(AppTab.history.title, systemImage: AppTab.history.systemImage)

@@ -23,6 +23,7 @@ private enum HistorySheet: Identifiable {
 
 @MainActor
 struct HistoryView: View {
+    @Binding var selectedTab: AppTab
     @Environment(WorkSessionStore.self) private var store
     @Environment(PurchaseManager.self) private var purchases
     @Environment(AppTheme.self) private var theme
@@ -38,11 +39,16 @@ struct HistoryView: View {
     var body: some View {
         Group {
             if store.completedSessions.isEmpty {
-                ContentUnavailableView(
-                    "history.empty.title",
-                    systemImage: "clock.badge.questionmark",
-                    description: Text("history.empty.description")
-                )
+                ContentUnavailableView {
+                    Label("history.empty.title", systemImage: "clock.badge.questionmark")
+                } description: {
+                    Text("history.empty.description")
+                } actions: {
+                    Button("history.empty.action") {
+                        selectedTab = .today
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
                 .background(theme.background)
             } else {
                 List {
