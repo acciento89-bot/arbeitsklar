@@ -34,6 +34,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
     var title: String
     var note: String
     var tags: [String]
+    var tips: Double
 
     init(
         id: UUID = UUID(),
@@ -46,7 +47,8 @@ struct WorkSession: Codable, Hashable, Identifiable {
         payRules: PayRules = .none,
         title: String = "",
         note: String = "",
-        tags: [String] = []
+        tags: [String] = [],
+        tips: Double = 0
     ) {
         self.id = id
         self.startedAt = startedAt
@@ -59,6 +61,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
         self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
         self.tags = ShiftTemplate.normalizedTags(tags)
+        self.tips = max(0, tips)
     }
 
     var isActive: Bool { endedAt == nil }
@@ -77,6 +80,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
         case title
         case note
         case tags
+        case tips
     }
 
     init(from decoder: Decoder) throws {
@@ -94,6 +98,7 @@ struct WorkSession: Codable, Hashable, Identifiable {
         tags = ShiftTemplate.normalizedTags(
             try container.decodeIfPresent([String].self, forKey: .tags) ?? []
         )
+        tips = max(0, try container.decodeIfPresent(Double.self, forKey: .tips) ?? 0)
     }
 
     func duration(asOf date: Date = .now) -> TimeInterval {
@@ -118,6 +123,10 @@ struct WorkSession: Codable, Hashable, Identifiable {
 
     func earnings(asOf date: Date = .now) -> Double {
         earningsBreakdown(asOf: date).totalEarnings
+    }
+
+    func totalIncome(asOf date: Date = .now) -> Double {
+        earnings(asOf: date) + tips
     }
 
     func earningsBreakdown(asOf date: Date = .now) -> EarningsBreakdown {

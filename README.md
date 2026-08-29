@@ -16,6 +16,7 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 - Calendar planner for upcoming shifts with day agenda and reminders
 - Start a planned shift directly into the live earnings timer
 - Searchable shift titles, notes, and tags
+- Live tip tracker with quick amounts, custom entry, history totals, and CSV fields
 - Configurable monthly gross-earnings goal with live progress
 - Motivational per-shift goal with a live, premium-aware time-to-goal forecast
 - Transparent base-pay, overtime, night, and weekend premium breakdowns
@@ -76,7 +77,7 @@ Currency, date, time, decimal, and duration formatting use the user’s current 
 
 Each shift snapshots the active pay rules when it starts, so changing settings later does not rewrite historical earnings. Base pay, overtime premiums after the planned shift duration, night premiums inside the configured local-time window, and weekend premiums are calculated separately and may stack. The history, analytics, monthly goal, Live Activity, manual-entry preview, edit preview, and CSV export all use the same calculation engine.
 
-All amounts are gross estimates. Tax, collective-agreement, holiday, and country-specific legal rules are intentionally not inferred automatically.
+All wage amounts are gross estimates. Tips are tracked separately and are only added to the displayed total income and CSV total; they are intentionally excluded from wage-premium calculations and the monthly payslip audit. Tax, collective-agreement, holiday, and country-specific legal rules are not inferred automatically.
 
 ## Live Activity behavior
 

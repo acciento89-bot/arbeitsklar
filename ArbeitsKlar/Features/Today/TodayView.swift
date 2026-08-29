@@ -23,6 +23,10 @@ struct TodayView: View {
                     LiveEarningsCard(date: .now)
                 }
 
+                if store.activeSession != nil || store.tipsToday() > 0 {
+                    TipTrackerCard()
+                }
+
                 if store.activeSession == nil, let nextShift = store.nextScheduledShift {
                     NextScheduledShiftCard(shift: nextShift)
                 }
@@ -144,6 +148,88 @@ struct TodayView: View {
         .foregroundStyle(theme.secondaryLabel)
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 6)
+    }
+}
+
+@MainActor
+private struct TipTrackerCard: View {
+    @Environment(WorkSessionStore.self) private var store
+    @Environment(AppTheme.self) private var theme
+    @State private var customAmount = 0.0
+    @FocusState private var isAmountFocused: Bool
+
+    private let quickAmounts = [2.0, 5.0, 10.0]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("tips.title")
+                        .font(.headline)
+                    Text("tips.subtitle")
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryLabel)
+                }
+                Spacer()
+                Text(store.tipsToday(), format: .currency(code: currencyCode))
+                    .font(.title3.bold().monospacedDigit())
+                    .foregroundStyle(theme.success)
+            }
+
+            if store.activeSession != nil {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { quickButtons }
+                    VStack(spacing: 8) { quickButtons }
+                }
+
+                HStack(spacing: 10) {
+                    TextField(
+                        "tips.custom",
+                        value: $customAmount,
+                        format: .number.precision(.fractionLength(0...2))
+                    )
+                    .keyboardType(.decimalPad)
+                    .focused($isAmountFocused)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    Button("tips.add") {
+                        store.addTip(customAmount)
+                        customAmount = 0
+                        isAmountFocused = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(customAmount <= 0)
+                }
+            }
+        }
+        .padding(18)
+        .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        }
+        .sensoryFeedback(.success, trigger: store.activeSession?.tips ?? 0)
+    }
+
+    @ViewBuilder
+    private var quickButtons: some View {
+        ForEach(quickAmounts, id: \.self) { amount in
+            Button {
+                store.addTip(amount)
+            } label: {
+                Text("+\(amount, format: .currency(code: currencyCode))")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityLabel("tips.add")
+            .accessibilityValue(Text(amount, format: .currency(code: currencyCode)))
+        }
+    }
+
+    private var currencyCode: String {
+        store.activeSession?.currencyCode ?? store.profile.currencyCode
     }
 }
 
@@ -338,6 +424,17 @@ private struct LiveEarningsCard: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.82))
                     .accessibilityLabel("earnings.premiums")
+                }
+
+                if let session, session.tips > 0 {
+                    Label {
+                        Text(session.tips, format: .currency(code: currency))
+                    } icon: {
+                        Image(systemName: "heart.fill")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .accessibilityLabel("tips.amount")
                 }
             }
 

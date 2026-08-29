@@ -16,6 +16,7 @@ struct AddSessionView: View {
     @State private var title: String
     @State private var note: String
     @State private var tagsText: String
+    @State private var tips: Double
     private let payRules: PayRules
     @FocusState private var focusedField: Field?
 
@@ -24,6 +25,7 @@ struct AddSessionView: View {
         case title
         case tags
         case note
+        case tips
     }
 
     init(profile: PayProfile) {
@@ -37,6 +39,7 @@ struct AddSessionView: View {
         _title = State(initialValue: "")
         _note = State(initialValue: "")
         _tagsText = State(initialValue: "")
+        _tips = State(initialValue: 0)
         payRules = profile.payRules
     }
 
@@ -93,6 +96,18 @@ struct AddSessionView: View {
                             .monospacedDigit()
                         }
                     }
+
+                    LabeledContent("tips.amount") {
+                        TextField(
+                            "tips.amount",
+                            value: $tips,
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .tips)
+                        .frame(maxWidth: 120)
+                    }
                 }
 
                 Section {
@@ -124,6 +139,13 @@ struct AddSessionView: View {
                     if previewBreakdown.premiumEarnings > 0 {
                         LabeledContent("earnings.premiums") {
                             Text(previewBreakdown.premiumEarnings, format: .currency(code: currencyCode))
+                                .monospacedDigit()
+                        }
+                    }
+                    if tips > 0 {
+                        LabeledContent("tips.total_income") {
+                            Text(previewBreakdown.totalEarnings + tips, format: .currency(code: currencyCode))
+                                .fontWeight(.semibold)
                                 .monospacedDigit()
                         }
                     }
@@ -171,7 +193,8 @@ struct AddSessionView: View {
             payRules: payRules,
             title: title,
             note: note,
-            tags: parsedTags
+            tags: parsedTags,
+            tips: tips
         )
         return previewSession.earningsBreakdown()
     }
@@ -192,7 +215,8 @@ struct AddSessionView: View {
             payRules: payRules,
             title: title,
             note: note,
-            tags: parsedTags
+            tags: parsedTags,
+            tips: tips
         ) {
             dismiss()
         }

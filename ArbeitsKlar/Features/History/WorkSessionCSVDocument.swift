@@ -26,7 +26,8 @@ struct WorkSessionCSVDocument: FileDocument {
         let header = [
             "start", "end", "work_seconds", "break_seconds", "hourly_rate",
             "currency", "planned_hours", "base_earnings", "overtime_premium",
-            "night_premium", "weekend_premium", "total_earnings", "title", "tags", "note"
+            "night_premium", "weekend_premium", "wage_earnings", "tips", "total_income",
+            "title", "tags", "note"
         ].joined(separator: ",")
 
         let dateFormatter = ISO8601DateFormatter()
@@ -45,6 +46,8 @@ struct WorkSessionCSVDocument: FileDocument {
                 decimal(breakdown.nightPremium),
                 decimal(breakdown.weekendPremium),
                 decimal(breakdown.totalEarnings),
+                decimal(session.tips),
+                decimal(session.totalIncome()),
                 session.title,
                 session.tags.joined(separator: " | "),
                 session.note

@@ -17,6 +17,7 @@ struct EditSessionView: View {
     @State private var title: String
     @State private var note: String
     @State private var tagsText: String
+    @State private var tips: Double
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -24,6 +25,7 @@ struct EditSessionView: View {
         case title
         case tags
         case note
+        case tips
     }
 
     init(session: WorkSession) {
@@ -37,6 +39,7 @@ struct EditSessionView: View {
         _title = State(initialValue: session.title)
         _note = State(initialValue: session.note)
         _tagsText = State(initialValue: session.tags.joined(separator: ", "))
+        _tips = State(initialValue: session.tips)
     }
 
     var body: some View {
@@ -94,6 +97,18 @@ struct EditSessionView: View {
                             }
                         }
                     }
+
+                    LabeledContent("tips.amount") {
+                        TextField(
+                            "tips.amount",
+                            value: $tips,
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .tips)
+                        .frame(maxWidth: 120)
+                    }
                 }
 
                 Section {
@@ -126,6 +141,13 @@ struct EditSessionView: View {
 
                     if previewBreakdown.premiumEarnings > 0 {
                         premiumRows(previewBreakdown)
+                    }
+                    if tips > 0 {
+                        LabeledContent("tips.total_income") {
+                            Text(previewBreakdown.totalEarnings + tips, format: .currency(code: currencyCode))
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                        }
                     }
                 }
             }
@@ -184,7 +206,8 @@ struct EditSessionView: View {
             payRules: session.payRules,
             title: title,
             note: note,
-            tags: parsedTags
+            tags: parsedTags,
+            tips: tips
         )
     }
 
@@ -227,7 +250,8 @@ struct EditSessionView: View {
             plannedHours: plannedHours,
             title: title,
             note: note,
-            tags: parsedTags
+            tags: parsedTags,
+            tips: tips
         )
         if didSave {
             dismiss()

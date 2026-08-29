@@ -357,6 +357,7 @@ private struct SessionRow: View {
         let breakDuration = session.breakDuration()
         let overtime = session.overtime()
         let premiumEarnings = session.earningsBreakdown().premiumEarnings
+        let tips = session.tips
 
         HStack(spacing: 14) {
             Image(systemName: "briefcase.fill")
@@ -397,20 +398,22 @@ private struct SessionRow: View {
                         .lineLimit(1)
                 }
 
-                if breakDuration > 0 || overtime > 0 || premiumEarnings > 0 {
+                if breakDuration > 0 || overtime > 0 || premiumEarnings > 0 || tips > 0 {
                     ViewThatFits(in: .horizontal) {
                         HStack(spacing: 8) {
                             statPills(
                                 breakDuration: breakDuration,
                                 overtime: overtime,
-                                premiumEarnings: premiumEarnings
+                                premiumEarnings: premiumEarnings,
+                                tips: tips
                             )
                         }
                         VStack(alignment: .leading, spacing: 6) {
                             statPills(
                                 breakDuration: breakDuration,
                                 overtime: overtime,
-                                premiumEarnings: premiumEarnings
+                                premiumEarnings: premiumEarnings,
+                                tips: tips
                             )
                         }
                     }
@@ -419,7 +422,7 @@ private struct SessionRow: View {
 
             Spacer(minLength: 8)
 
-            Text(session.earnings(), format: .currency(code: session.currencyCode))
+            Text(session.totalIncome(), format: .currency(code: session.currencyCode))
                 .font(.headline.weight(.bold))
                 .monospacedDigit()
         }
@@ -431,7 +434,8 @@ private struct SessionRow: View {
     private func statPills(
         breakDuration: TimeInterval,
         overtime: TimeInterval,
-        premiumEarnings: Double
+        premiumEarnings: Double,
+        tips: Double
     ) -> some View {
         if breakDuration > 0 {
             SessionStatPill(
@@ -452,6 +456,13 @@ private struct SessionRow: View {
                 title: "earnings.premiums",
                 value: premiumEarnings.formatted(.currency(code: session.currencyCode)),
                 systemImage: "sparkles"
+            )
+        }
+        if tips > 0 {
+            SessionStatPill(
+                title: "tips.amount",
+                value: tips.formatted(.currency(code: session.currencyCode)),
+                systemImage: "heart.fill"
             )
         }
     }

@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "tips.add" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Hinzufügen"}},"en":{"stringUnit":{"state":"translated","value":"Add"}}}},
+    "tips.amount" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Trinkgeld"}},"en":{"stringUnit":{"state":"translated","value":"Tips"}}}},
+    "tips.custom" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Eigener Betrag"}},"en":{"stringUnit":{"state":"translated","value":"Custom amount"}}}},
+    "tips.subtitle" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Schnell erfassen, getrennt vom berechneten Bruttolohn"}},"en":{"stringUnit":{"state":"translated","value":"Track quickly, separate from calculated gross pay"}}}},
+    "tips.title" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Trinkgeld-Tracker"}},"en":{"stringUnit":{"state":"translated","value":"Tip tracker"}}}},
+    "tips.total_income" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Gesamt inklusive Trinkgeld"}},"en":{"stringUnit":{"state":"translated","value":"Total including tips"}}}},
     "common.edit" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Bearbeiten"}},"en":{"stringUnit":{"state":"translated","value":"Edit"}}}},
     "onboarding.planner.kicker" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Plan und Realität"}},"en":{"stringUnit":{"state":"translated","value":"Plan and reality"}}}},
     "onboarding.planner.message" : {"localizations":{"de":{"stringUnit":{"state":"translated","value":"Plane kommende Schichten im Kalender, nutze Vorlagen und starte sie direkt in den Live-Verdienst."}},"en":{"stringUnit":{"state":"translated","value":"Plan upcoming shifts in the calendar, use templates, and start them directly in live earnings."}}}},

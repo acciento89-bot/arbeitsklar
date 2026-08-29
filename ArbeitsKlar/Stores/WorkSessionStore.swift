@@ -239,6 +239,11 @@ final class WorkSessionStore {
         await liveActivityController.update(for: activeSession, asOf: date)
     }
 
+    func addTip(_ amount: Double) {
+        guard amount > 0, let index = sessions.firstIndex(where: \.isActive) else { return }
+        sessions[index].tips += amount
+    }
+
     func deleteSession(id: UUID) {
         sessions.removeAll { $0.id == id && !$0.isActive }
     }
@@ -254,7 +259,8 @@ final class WorkSessionStore {
         payRules: PayRules,
         title: String = "",
         note: String = "",
-        tags: [String] = []
+        tags: [String] = [],
+        tips: Double = 0
     ) -> Bool {
         guard endedAt > startedAt, hourlyRate > 0, plannedHours > 0 else {
             return false
@@ -287,7 +293,8 @@ final class WorkSessionStore {
                 payRules: payRules,
                 title: title,
                 note: note,
-                tags: tags
+                tags: tags,
+                tips: tips
             )
         )
         sessions.sort { $0.startedAt > $1.startedAt }
@@ -305,7 +312,8 @@ final class WorkSessionStore {
         plannedHours: Double,
         title: String,
         note: String,
-        tags: [String]
+        tags: [String],
+        tips: Double
     ) -> Bool {
         guard let index = sessions.firstIndex(where: { $0.id == id && !$0.isActive }) else {
             return false
@@ -325,6 +333,7 @@ final class WorkSessionStore {
         updatedSession.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         updatedSession.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
         updatedSession.tags = ShiftTemplate.normalizedTags(tags)
+        updatedSession.tips = max(0, tips)
 
         if normalizedBreakDuration > 0 {
             let workedBeforeBreak = (totalDuration - normalizedBreakDuration) / 2
@@ -401,6 +410,10 @@ final class WorkSessionStore {
         return sessions
             .filter { $0.startedAt >= startOfDay && $0.startedAt <= date }
             .reduce(0) { $0 + $1.earnings(asOf: date) }
+    }
+
+    func tipsToday(asOf date: Date = .now) -> Double {
+        sessionsToday(asOf: date).reduce(0) { $0 + $1.tips }
     }
 
     func earningsThisMonth(asOf date: Date = .now) -> Double {
@@ -732,7 +745,8 @@ extension WorkSessionStore {
                 payRules: store.profile.payRules,
                 title: dayOffset % 5 == 0 ? "Emergency duty" : "Service",
                 note: dayOffset % 7 == 0 ? "Customer visit documented" : "",
-                tags: dayOffset % 5 == 0 ? ["On-call"] : ["Service"]
+                tags: dayOffset % 5 == 0 ? ["On-call"] : ["Service"],
+                tips: dayOffset % 6 == 0 ? 5 : 0
             )
         }
         .sorted { $0.startedAt > $1.startedAt }
