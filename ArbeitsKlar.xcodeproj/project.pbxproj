@@ -39,6 +39,9 @@
 		A1000000000000000000001E /* PaycheckAuditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000023 /* PaycheckAuditView.swift */; };
 		A10000000000000000000024 /* ShiftTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000024 /* ShiftTemplate.swift */; };
 		A10000000000000000000025 /* ShiftTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000025 /* ShiftTemplatesView.swift */; };
+		A10000000000000000000026 /* ScheduledShift.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000026 /* ScheduledShift.swift */; };
+		A10000000000000000000027 /* PlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000027 /* PlannerView.swift */; };
+		A10000000000000000000028 /* ScheduledShiftEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000028 /* ScheduledShiftEditor.swift */; };
 		A10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
 		A10000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* PrivacyInfo.xcprivacy */; };
@@ -111,6 +114,9 @@
 		B10000000000000000000023 /* PaycheckAuditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaycheckAuditView.swift; sourceTree = "<group>"; };
 		B10000000000000000000024 /* ShiftTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftTemplate.swift; sourceTree = "<group>"; };
 		B10000000000000000000025 /* ShiftTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftTemplatesView.swift; sourceTree = "<group>"; };
+		B10000000000000000000026 /* ScheduledShift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledShift.swift; sourceTree = "<group>"; };
+		B10000000000000000000027 /* PlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerView.swift; sourceTree = "<group>"; };
+		B10000000000000000000028 /* ScheduledShiftEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledShiftEditor.swift; sourceTree = "<group>"; };
 		B10000000000000000000020 /* ArbeitsKlar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArbeitsKlar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000001 /* ArbeitsKlarLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArbeitsKlarLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -196,6 +202,7 @@
 				D10000000000000000000009 /* Settings */,
 				D10000000000000000000010 /* Onboarding */,
 				D10000000000000000000011 /* Pro */,
+				D10000000000000000000013 /* Planner */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -250,6 +257,15 @@
 			path = Pro;
 			sourceTree = "<group>";
 		};
+		D10000000000000000000013 /* Planner */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000027 /* PlannerView.swift */,
+				B10000000000000000000028 /* ScheduledShiftEditor.swift */,
+			);
+			path = Planner;
+			sourceTree = "<group>";
+		};
 		D1000000000000000000000A /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -259,6 +275,7 @@
 				B1000000000000000000001E /* PayRules.swift */,
 				B10000000000000000000022 /* PaycheckAudit.swift */,
 				B10000000000000000000024 /* ShiftTemplate.swift */,
+				B10000000000000000000026 /* ScheduledShift.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -470,6 +487,9 @@
 				A1000000000000000000001E /* PaycheckAuditView.swift in Sources */,
 				A10000000000000000000024 /* ShiftTemplate.swift in Sources */,
 				A10000000000000000000025 /* ShiftTemplatesView.swift in Sources */,
+				A10000000000000000000026 /* ScheduledShift.swift in Sources */,
+				A10000000000000000000027 /* PlannerView.swift in Sources */,
+				A10000000000000000000028 /* ScheduledShiftEditor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -6,6 +6,7 @@ enum AppPreferences {
 
 enum AppTab: String, CaseIterable, Identifiable {
     case today
+    case planner
     case history
     case settings
 
@@ -14,6 +15,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     var title: LocalizedStringKey {
         switch self {
         case .today: "tab.today"
+        case .planner: "tab.planner"
         case .history: "tab.history"
         case .settings: "tab.settings"
         }
@@ -22,6 +24,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .today: "bolt.fill"
+        case .planner: "calendar"
         case .history: "clock.arrow.circlepath"
         case .settings: "slider.horizontal.3"
         }
@@ -46,6 +49,14 @@ struct AppView: View {
                 Label(AppTab.today.title, systemImage: AppTab.today.systemImage)
             }
             .tag(AppTab.today)
+
+            NavigationStack {
+                PlannerView()
+            }
+            .tabItem {
+                Label(AppTab.planner.title, systemImage: AppTab.planner.systemImage)
+            }
+            .tag(AppTab.planner)
 
             NavigationStack {
                 HistoryView()

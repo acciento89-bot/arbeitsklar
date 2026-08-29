@@ -8,10 +8,10 @@ struct OnboardingView: View {
     @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @State private var currentPage = 0
 
-    private let lastPage = 2
+    private let lastPage = 3
 
     init(initialPage: Int = 0) {
-        _currentPage = State(initialValue: min(max(initialPage, 0), 2))
+        _currentPage = State(initialValue: min(max(initialPage, 0), 3))
     }
 
     var body: some View {
@@ -41,8 +41,17 @@ struct OnboardingView: View {
                     )
                     .tag(1)
 
+                    OnboardingFeaturePage(
+                        kicker: "onboarding.planner.kicker",
+                        title: "onboarding.planner.title",
+                        message: "onboarding.planner.message",
+                        systemImage: "calendar.badge.clock",
+                        accent: theme.accent
+                    )
+                    .tag(2)
+
                     OnboardingSetupPage()
-                        .tag(2)
+                        .tag(3)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
 

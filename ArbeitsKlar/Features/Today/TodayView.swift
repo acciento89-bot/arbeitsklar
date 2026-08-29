@@ -23,6 +23,10 @@ struct TodayView: View {
                     LiveEarningsCard(date: .now)
                 }
 
+                if store.activeSession == nil, let nextShift = store.nextScheduledShift {
+                    NextScheduledShiftCard(shift: nextShift)
+                }
+
                 if store.activeSession == nil, !store.shiftTemplates.isEmpty {
                     ShiftTemplateQuickStart()
                 }
@@ -140,6 +144,70 @@ struct TodayView: View {
         .foregroundStyle(theme.secondaryLabel)
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 6)
+    }
+}
+
+@MainActor
+private struct NextScheduledShiftCard: View {
+    @Environment(WorkSessionStore.self) private var store
+    @Environment(AppTheme.self) private var theme
+    let shift: ScheduledShift
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("planner.next_shift")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(theme.success)
+                    Text(shift.title.isEmpty ? String(localized: "planner.untitled") : shift.title)
+                        .font(.title3.bold())
+                }
+                Spacer()
+                Image(systemName: "calendar.badge.clock")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(theme.accent)
+                    .frame(width: 42, height: 42)
+                    .background(theme.accent.opacity(0.14), in: Circle())
+            }
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 14) { timing }
+                VStack(alignment: .leading, spacing: 6) { timing }
+            }
+            .font(.subheadline)
+            .foregroundStyle(theme.secondaryLabel)
+
+            Button {
+                Task { await store.startShift(from: shift) }
+            } label: {
+                Label("planner.start_now", systemImage: "play.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(18)
+        .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private var timing: some View {
+        Label {
+            Text(shift.startsAt, format: .dateTime.weekday(.wide).day().month().hour().minute())
+        } icon: {
+            Image(systemName: "clock.fill")
+        }
+        Label {
+            Text(shift.plannedHours, format: .number.precision(.fractionLength(0...1)))
+            Text("unit.hours")
+        } icon: {
+            Image(systemName: "timer")
+        }
     }
 }
 

@@ -44,6 +44,10 @@ final class WorkSessionStore {
         didSet { persistShiftTemplates() }
     }
 
+    private(set) var scheduledShifts: [ScheduledShift] {
+        didSet { persistScheduledShifts() }
+    }
+
     @ObservationIgnored
     private let defaults: UserDefaults
 
@@ -56,6 +60,7 @@ final class WorkSessionStore {
     private static let snapshotKey = "work_session_snapshot_v1"
     private static let paycheckAuditsKey = "paycheck_audits_v1"
     private static let shiftTemplatesKey = "shift_templates_v1"
+    private static let scheduledShiftsKey = "scheduled_shifts_v1"
 
     init(
         defaults: UserDefaults = .standard,
@@ -64,6 +69,14 @@ final class WorkSessionStore {
         self.defaults = defaults
         self.liveActivityController = LiveActivityController(isEnabled: liveActivitiesEnabled)
         self.reminderController = ShiftReminderController()
+        if
+            let scheduledData = defaults.data(forKey: Self.scheduledShiftsKey),
+            let scheduled = try? JSONDecoder().decode([ScheduledShift].self, from: scheduledData)
+        {
+            self.scheduledShifts = scheduled.sorted { $0.startsAt < $1.startsAt }
+        } else {
+            self.scheduledShifts = []
+        }
         if
             let templateData = defaults.data(forKey: Self.shiftTemplatesKey),
             let templates = try? JSONDecoder().decode([ShiftTemplate].self, from: templateData)
@@ -103,6 +116,10 @@ final class WorkSessionStore {
             .sorted { $0.startedAt > $1.startedAt }
     }
 
+    var nextScheduledShift: ScheduledShift? {
+        scheduledShifts.first { !$0.isPast() }
+    }
+
     func startShift(at date: Date = .now) async {
         guard activeSession == nil else { return }
 
@@ -134,6 +151,29 @@ final class WorkSessionStore {
         sessions.insert(session, at: 0)
         liveActivityController.start(for: session)
         await scheduleReminderIfNeeded(for: session, asOf: date)
+    }
+
+    @discardableResult
+    func startShift(from plannedShift: ScheduledShift, at date: Date = .now) async -> Bool {
+        guard activeSession == nil else { return false }
+        guard scheduledShifts.contains(where: { $0.id == plannedShift.id }) else { return false }
+
+        let session = WorkSession(
+            startedAt: date,
+            hourlyRate: profile.hourlyRate,
+            currencyCode: profile.currencyCode,
+            plannedHours: plannedShift.plannedHours,
+            payRules: profile.payRules,
+            title: plannedShift.title,
+            note: plannedShift.note,
+            tags: plannedShift.tags
+        )
+        scheduledShifts.removeAll { $0.id == plannedShift.id }
+        reminderController.cancelPlannedShift(id: plannedShift.id)
+        sessions.insert(session, at: 0)
+        liveActivityController.start(for: session)
+        await scheduleReminderIfNeeded(for: session, asOf: date)
+        return true
     }
 
     func pauseShift(at date: Date = .now) async {
@@ -322,6 +362,38 @@ final class WorkSessionStore {
         shiftTemplates.removeAll { $0.id == id }
     }
 
+    @discardableResult
+    func saveScheduledShift(_ plannedShift: ScheduledShift) async -> Bool {
+        var normalized = plannedShift
+        var reminderSucceeded = true
+        if plannedShift.reminderMinutesBefore != nil {
+            reminderSucceeded = await reminderController.schedule(for: plannedShift)
+            if !reminderSucceeded {
+                normalized.reminderMinutesBefore = nil
+            }
+        } else {
+            reminderController.cancelPlannedShift(id: plannedShift.id)
+        }
+
+        if let index = scheduledShifts.firstIndex(where: { $0.id == normalized.id }) {
+            scheduledShifts[index] = normalized
+        } else {
+            scheduledShifts.append(normalized)
+        }
+        scheduledShifts.sort { $0.startsAt < $1.startsAt }
+        return reminderSucceeded
+    }
+
+    func deleteScheduledShift(id: UUID) {
+        reminderController.cancelPlannedShift(id: id)
+        scheduledShifts.removeAll { $0.id == id }
+    }
+
+    func scheduledShifts(on date: Date) -> [ScheduledShift] {
+        let calendar = Calendar.autoupdatingCurrent
+        return scheduledShifts.filter { calendar.isDate($0.startsAt, inSameDayAs: date) }
+    }
+
     func earningsToday(asOf date: Date = .now) -> Double {
         let calendar = Calendar.autoupdatingCurrent
         let startOfDay = calendar.startOfDay(for: date)
@@ -364,6 +436,12 @@ final class WorkSessionStore {
             let templates = try? JSONDecoder().decode([ShiftTemplate].self, from: templateData)
         {
             shiftTemplates = templates
+        }
+        if
+            let scheduledData = defaults.data(forKey: Self.scheduledShiftsKey),
+            let scheduled = try? JSONDecoder().decode([ScheduledShift].self, from: scheduledData)
+        {
+            scheduledShifts = scheduled.sorted { $0.startsAt < $1.startsAt }
         }
     }
 
@@ -494,6 +572,11 @@ final class WorkSessionStore {
         guard let data = try? JSONEncoder().encode(shiftTemplates) else { return }
         defaults.set(data, forKey: Self.shiftTemplatesKey)
     }
+
+    private func persistScheduledShifts() {
+        guard let data = try? JSONEncoder().encode(scheduledShifts) else { return }
+        defaults.set(data, forKey: Self.scheduledShiftsKey)
+    }
 }
 
 extension WorkSessionStore {
@@ -518,6 +601,15 @@ extension WorkSessionStore {
                 startMinute: 30,
                 plannedHours: 8,
                 breakMinutes: 30,
+                tags: ["Service"]
+            )
+        ]
+        store.scheduledShifts = [
+            ScheduledShift(
+                startsAt: Calendar.autoupdatingCurrent.date(byAdding: .day, value: 1, to: .now) ?? .now,
+                plannedHours: 8,
+                breakMinutes: 30,
+                title: "Early shift",
                 tags: ["Service"]
             )
         ]
@@ -562,6 +654,7 @@ extension WorkSessionStore {
         store.shiftTemplates = [
             ShiftTemplate(name: "Early shift", plannedHours: 8, breakMinutes: 30, tags: ["Service"])
         ]
+        store.scheduledShifts = []
         store.sessions = [
             WorkSession(
                 startedAt: .now.addingTimeInterval(-3_600),
@@ -595,6 +688,21 @@ extension WorkSessionStore {
             ShiftTemplate(name: "Service", startHour: 7, startMinute: 30, plannedHours: 8, breakMinutes: 30, tags: ["Service"]),
             ShiftTemplate(name: "Emergency duty", startHour: 16, plannedHours: 6, breakMinutes: 0, tags: ["On-call"])
         ]
+        store.scheduledShifts = (1...8).compactMap { dayOffset in
+            guard
+                let day = calendar.date(byAdding: .day, value: dayOffset, to: .now),
+                !calendar.isDateInWeekend(day),
+                let start = calendar.date(bySettingHour: 7, minute: 30, second: 0, of: day)
+            else { return nil }
+            return ScheduledShift(
+                startsAt: start,
+                plannedHours: dayOffset % 4 == 0 ? 6 : 8,
+                breakMinutes: dayOffset % 4 == 0 ? 0 : 30,
+                title: dayOffset % 4 == 0 ? "Emergency duty" : "Service",
+                tags: dayOffset % 4 == 0 ? ["On-call"] : ["Service"],
+                reminderMinutesBefore: nil
+            )
+        }
         store.sessions = (0..<70).compactMap { dayOffset in
             guard
                 let day = calendar.date(byAdding: .day, value: -dayOffset, to: .now),
