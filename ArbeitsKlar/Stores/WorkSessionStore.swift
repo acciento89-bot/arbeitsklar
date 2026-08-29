@@ -1,6 +1,17 @@
 import Foundation
 import Observation
 
+struct WorkPeriodSummary: Equatable {
+    let sessionCount: Int
+    let workDuration: TimeInterval
+    let breakDuration: TimeInterval
+    let overtimeDuration: TimeInterval
+    let earnings: Double
+    let currencyCode: String
+
+    var isEmpty: Bool { sessionCount == 0 }
+}
+
 @MainActor
 @Observable
 final class WorkSessionStore {
@@ -113,6 +124,51 @@ final class WorkSessionStore {
         sessions.removeAll { $0.id == id && !$0.isActive }
     }
 
+    @discardableResult
+    func updateCompletedSession(
+        id: UUID,
+        startedAt: Date,
+        endedAt: Date,
+        breakDuration: TimeInterval,
+        hourlyRate: Double,
+        currencyCode: String,
+        plannedHours: Double
+    ) -> Bool {
+        guard let index = sessions.firstIndex(where: { $0.id == id && !$0.isActive }) else {
+            return false
+        }
+        guard endedAt > startedAt, hourlyRate > 0, plannedHours > 0 else {
+            return false
+        }
+
+        let totalDuration = endedAt.timeIntervalSince(startedAt)
+        let normalizedBreakDuration = min(max(0, breakDuration), max(0, totalDuration - 60))
+        var updatedSession = sessions[index]
+        updatedSession.startedAt = startedAt
+        updatedSession.endedAt = endedAt
+        updatedSession.hourlyRate = hourlyRate
+        updatedSession.currencyCode = currencyCode
+        updatedSession.plannedHours = plannedHours
+
+        if normalizedBreakDuration > 0 {
+            let workedBeforeBreak = (totalDuration - normalizedBreakDuration) / 2
+            let breakStart = startedAt.addingTimeInterval(workedBeforeBreak)
+            updatedSession.breaks = [
+                WorkBreak(
+                    startedAt: breakStart,
+                    endedAt: breakStart.addingTimeInterval(normalizedBreakDuration)
+                )
+            ]
+        } else {
+            updatedSession.breaks = []
+        }
+
+        var updatedSessions = sessions
+        updatedSessions[index] = updatedSession
+        sessions = updatedSessions.sorted { $0.startedAt > $1.startedAt }
+        return true
+    }
+
     func clearCompletedSessions() {
         sessions.removeAll { !$0.isActive }
     }
@@ -145,6 +201,27 @@ final class WorkSessionStore {
         let plannedHours = sessions.first?.plannedHours ?? profile.plannedHours
         let duration = sessions.reduce(0) { $0 + $1.duration(asOf: date) }
         return max(0, duration - plannedHours * 3_600)
+    }
+
+    func currentWeekSummary(asOf date: Date = .now) -> WorkPeriodSummary {
+        let calendar = Calendar.autoupdatingCurrent
+        let interval = calendar.dateInterval(of: .weekOfYear, for: date)
+        let weekSessions = completedSessions.filter { session in
+            guard let interval else { return false }
+            return session.startedAt >= interval.start && session.startedAt < interval.end
+        }
+        let currencyCode = weekSessions.first?.currencyCode ?? profile.currencyCode
+
+        return WorkPeriodSummary(
+            sessionCount: weekSessions.count,
+            workDuration: weekSessions.reduce(0) { $0 + $1.duration(asOf: date) },
+            breakDuration: weekSessions.reduce(0) { $0 + $1.breakDuration(asOf: date) },
+            overtimeDuration: weekSessions.reduce(0) { $0 + $1.overtime(asOf: date) },
+            earnings: weekSessions
+                .filter { $0.currencyCode == currencyCode }
+                .reduce(0) { $0 + $1.earnings(asOf: date) },
+            currencyCode: currencyCode
+        )
     }
 
     private func sessionsToday(asOf date: Date) -> [WorkSession] {

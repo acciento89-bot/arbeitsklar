@@ -24,11 +24,11 @@ struct WorkBreak: Codable, Hashable, Identifiable {
 
 struct WorkSession: Codable, Hashable, Identifiable {
     let id: UUID
-    let startedAt: Date
+    var startedAt: Date
     var endedAt: Date?
-    let hourlyRate: Double
-    let currencyCode: String
-    let plannedHours: Double
+    var hourlyRate: Double
+    var currencyCode: String
+    var plannedHours: Double
     var breaks: [WorkBreak]
 
     init(

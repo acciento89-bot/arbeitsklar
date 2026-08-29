@@ -77,6 +77,7 @@ struct AppView: View {
 #Preview {
     AppView()
         .environment(WorkSessionStore.preview)
+        .environment(PurchaseManager.previewFree)
         .environment(AppTheme())
         .preferredColorScheme(.dark)
 }

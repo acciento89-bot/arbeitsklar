@@ -1,16 +1,42 @@
 import SwiftUI
 
+private enum SettingsSheet: String, Identifiable {
+    case pro
+
+    var id: String { rawValue }
+}
+
 @MainActor
 struct SettingsView: View {
     @Environment(WorkSessionStore.self) private var store
+    @Environment(PurchaseManager.self) private var purchases
     @Environment(AppTheme.self) private var theme
     @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @State private var showsClearConfirmation = false
+    @State private var presentedSheet: SettingsSheet?
 
     var body: some View {
         @Bindable var store = store
 
         Form {
+            Section("settings.section.pro") {
+                Button {
+                    presentedSheet = .pro
+                } label: {
+                    HStack(spacing: 12) {
+                        Label("settings.pro", systemImage: "sparkles")
+                        Spacer()
+                        Text(proStatusTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(purchases.isPro ? theme.success : theme.accent)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(theme.secondaryLabel)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
             Section("settings.section.pay") {
                 LabeledContent("settings.hourly_rate") {
                     TextField(
@@ -96,6 +122,12 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(theme.background)
         .navigationTitle("settings.title")
+        .sheet(item: $presentedSheet) { sheet in
+            switch sheet {
+            case .pro:
+                ProView()
+            }
+        }
         .confirmationDialog(
             "settings.clear_confirm.title",
             isPresented: $showsClearConfirmation,
@@ -113,6 +145,13 @@ struct SettingsView: View {
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
     }
+
+    private var proStatusTitle: LocalizedStringKey {
+        if purchases.isPro {
+            return "settings.pro.unlocked"
+        }
+        return "settings.pro.discover"
+    }
 }
 
 #Preview("Settings") {
@@ -120,6 +159,7 @@ struct SettingsView: View {
         SettingsView()
     }
     .environment(WorkSessionStore.preview)
+    .environment(PurchaseManager.previewFree)
     .environment(AppTheme())
     .preferredColorScheme(.dark)
 }
