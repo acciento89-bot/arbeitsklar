@@ -36,7 +36,7 @@ struct ShiftTemplate: Codable, Hashable, Identifiable {
 
     static func normalizedTags(_ tags: [String]) -> [String] {
         var seen = Set<String>()
-        let normalized = tags.compactMap { rawTag in
+        let normalized: [String] = tags.compactMap { rawTag -> String? in
             let tag = rawTag.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !tag.isEmpty else { return nil }
             let key = tag.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .autoupdatingCurrent)
