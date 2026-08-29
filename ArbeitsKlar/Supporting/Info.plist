@@ -29,6 +29,8 @@
     <string>public.app-category.productivity</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
     <key>NSSupportsLiveActivities</key>
     <true/>
     <key>NSSupportsLiveActivitiesFrequentUpdates</key>
@@ -52,4 +54,3 @@
     </array>
 </dict>
 </plist>
-
