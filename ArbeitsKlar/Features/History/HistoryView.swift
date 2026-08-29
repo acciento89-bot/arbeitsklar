@@ -492,7 +492,7 @@ private struct SessionStatPill: View {
 
 #Preview("History") {
     NavigationStack {
-        HistoryView()
+        HistoryView(selectedTab: .constant(.history))
     }
     .environment(WorkSessionStore.preview)
     .environment(PurchaseManager.previewPro)
