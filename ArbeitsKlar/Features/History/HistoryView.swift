@@ -2,11 +2,14 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 private enum HistorySheet: Identifiable {
+    case add
     case edit(WorkSession)
     case pro
 
     var id: String {
         switch self {
+        case .add:
+            "add"
         case let .edit(session):
             "edit-\(session.id)"
         case .pro:
@@ -108,6 +111,14 @@ struct HistoryView: View {
         }
         .navigationTitle("history.title")
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    presentedSheet = purchases.isPro ? .add : .pro
+                } label: {
+                    Label("history.add", systemImage: "plus")
+                }
+            }
+
             if !store.completedSessions.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -120,6 +131,8 @@ struct HistoryView: View {
         }
         .sheet(item: $presentedSheet) { sheet in
             switch sheet {
+            case .add:
+                AddSessionView(profile: store.profile)
             case let .edit(session):
                 EditSessionView(session: session)
             case .pro:

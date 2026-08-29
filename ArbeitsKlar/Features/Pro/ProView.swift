@@ -185,7 +185,7 @@ private struct ProFeatureList: View {
             ProFeatureRow(
                 title: "pro.feature.edit.title",
                 message: "pro.feature.edit.message",
-                systemImage: "square.and.pencil"
+                systemImage: "plus.square.fill"
             )
             ProFeatureRow(
                 title: "pro.feature.export.title",

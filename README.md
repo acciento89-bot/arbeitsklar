@@ -11,6 +11,9 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 - Start, pause, resume, and finish shifts
 - Break-aware work time, earnings, and overtime calculations
 - Editable completed shifts with recalculated breaks and earnings
+- Manual completed-shift entry for forgotten or imported workdays (Pro)
+- Configurable monthly gross-earnings goal with live progress
+- Siri and Shortcuts actions to start, pause, resume, and end a shift
 - Pro week, month, and all-time insights with an earnings chart
 - Pro CSV export for completed shifts
 - Two premium color themes (Aurora and Sunset)
@@ -27,7 +30,7 @@ ArbeitsKlar macht Arbeitszeit unmittelbar sichtbar: Schicht starten, Brutto-Verd
 
 StoreKit 2 support is implemented for the non-consumable product `de.kamilunavo.arbeitsklar.pro.lifetime`. The app verifies current entitlements, listens for transaction updates, supports pending purchases, and provides an explicit restore action.
 
-No product has been created in App Store Connect by this repository change. Until that non-consumable product is configured there, the paywall remains visible but purchasing stays disabled. Pro unlocks week/month/all-time insights with an earnings chart, completed-shift editing, filtered CSV export, premium color themes, and local shift-end reminders.
+No product has been created in App Store Connect by this repository change. Until that non-consumable product is configured there, the paywall remains visible but purchasing stays disabled. Pro unlocks week/month/all-time insights with an earnings chart, manual entry and editing of completed shifts, filtered CSV export, premium color themes, and local shift-end reminders.
 
 For local UI testing without an App Store Connect product, select the shared `ArbeitsKlar Pro Preview` scheme in Xcode. It is a Debug-only mode that unlocks Pro and loads a realistic multi-week demo history. Release and Archive builds cannot activate this override.
 

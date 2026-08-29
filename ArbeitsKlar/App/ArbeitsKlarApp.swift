@@ -3,12 +3,14 @@ import SwiftUI
 
 @main
 struct ArbeitsKlarApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     #if DEBUG
     @State private var store = ProcessInfo.processInfo.arguments.contains("-demo-data")
         ? WorkSessionStore.demo
-        : WorkSessionStore()
+        : WorkSessionStore.shared
     #else
-    @State private var store = WorkSessionStore()
+    @State private var store = WorkSessionStore.shared
     #endif
     #if DEBUG
     @State private var purchases = PurchaseManager(
@@ -30,6 +32,11 @@ struct ArbeitsKlarApp: App {
                     await purchases.prepare()
                     await purchases.observeTransactionUpdates()
                 }
+        }
+        .onChange(of: scenePhase) {
+            if scenePhase == .active {
+                store.reloadFromDisk()
+            }
         }
     }
 }

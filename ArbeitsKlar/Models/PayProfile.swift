@@ -5,17 +5,20 @@ struct PayProfile: Codable, Hashable {
     var currencyCode: String
     var plannedHours: Double
     var shiftRemindersEnabled: Bool
+    var monthlyEarningsGoal: Double
 
     init(
         hourlyRate: Double,
         currencyCode: String,
         plannedHours: Double,
-        shiftRemindersEnabled: Bool = false
+        shiftRemindersEnabled: Bool = false,
+        monthlyEarningsGoal: Double = 0
     ) {
         self.hourlyRate = hourlyRate
         self.currencyCode = currencyCode
         self.plannedHours = plannedHours
         self.shiftRemindersEnabled = shiftRemindersEnabled
+        self.monthlyEarningsGoal = monthlyEarningsGoal
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -23,6 +26,7 @@ struct PayProfile: Codable, Hashable {
         case currencyCode
         case plannedHours
         case shiftRemindersEnabled
+        case monthlyEarningsGoal
     }
 
     init(from decoder: Decoder) throws {
@@ -31,6 +35,7 @@ struct PayProfile: Codable, Hashable {
         currencyCode = try container.decode(String.self, forKey: .currencyCode)
         plannedHours = try container.decode(Double.self, forKey: .plannedHours)
         shiftRemindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .shiftRemindersEnabled) ?? false
+        monthlyEarningsGoal = try container.decodeIfPresent(Double.self, forKey: .monthlyEarningsGoal) ?? 0
     }
 
     static let supportedCurrencyCodes = [

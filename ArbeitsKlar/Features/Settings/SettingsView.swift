@@ -124,6 +124,27 @@ struct SettingsView: View {
             }
 
             Section {
+                LabeledContent("settings.monthly_goal") {
+                    HStack(spacing: 5) {
+                        TextField(
+                            "settings.monthly_goal",
+                            value: $store.profile.monthlyEarningsGoal,
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 110)
+                        Text(store.profile.currencyCode)
+                            .foregroundStyle(theme.secondaryLabel)
+                    }
+                }
+            } header: {
+                Text("settings.section.goal")
+            } footer: {
+                Text("settings.monthly_goal.note")
+            }
+
+            Section {
                 LabeledContent("settings.languages") {
                     Text("settings.languages_value")
                         .foregroundStyle(theme.secondaryLabel)

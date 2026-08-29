@@ -21,6 +21,8 @@ struct WorkPeriodSummary: Equatable {
 @MainActor
 @Observable
 final class WorkSessionStore {
+    static let shared = WorkSessionStore()
+
     private struct Snapshot: Codable {
         var profile: PayProfile
         var sessions: [WorkSession]
@@ -157,6 +159,49 @@ final class WorkSessionStore {
     }
 
     @discardableResult
+    func addCompletedSession(
+        startedAt: Date,
+        endedAt: Date,
+        breakDuration: TimeInterval,
+        hourlyRate: Double,
+        currencyCode: String,
+        plannedHours: Double
+    ) -> Bool {
+        guard endedAt > startedAt, hourlyRate > 0, plannedHours > 0 else {
+            return false
+        }
+
+        let totalDuration = endedAt.timeIntervalSince(startedAt)
+        let normalizedBreakDuration = min(max(0, breakDuration), max(0, totalDuration - 60))
+        let breaks: [WorkBreak]
+        if normalizedBreakDuration > 0 {
+            let workedBeforeBreak = (totalDuration - normalizedBreakDuration) / 2
+            let breakStart = startedAt.addingTimeInterval(workedBeforeBreak)
+            breaks = [
+                WorkBreak(
+                    startedAt: breakStart,
+                    endedAt: breakStart.addingTimeInterval(normalizedBreakDuration)
+                )
+            ]
+        } else {
+            breaks = []
+        }
+
+        sessions.append(
+            WorkSession(
+                startedAt: startedAt,
+                endedAt: endedAt,
+                hourlyRate: hourlyRate,
+                currencyCode: currencyCode,
+                plannedHours: plannedHours,
+                breaks: breaks
+            )
+        )
+        sessions.sort { $0.startedAt > $1.startedAt }
+        return true
+    }
+
+    @discardableResult
     func updateCompletedSession(
         id: UUID,
         startedAt: Date,
@@ -212,6 +257,30 @@ final class WorkSessionStore {
         return sessions
             .filter { $0.startedAt >= startOfDay && $0.startedAt <= date }
             .reduce(0) { $0 + $1.earnings(asOf: date) }
+    }
+
+    func earningsThisMonth(asOf date: Date = .now) -> Double {
+        let calendar = Calendar.autoupdatingCurrent
+        guard let interval = calendar.dateInterval(of: .month, for: date) else { return 0 }
+
+        return sessions
+            .filter {
+                $0.startedAt >= interval.start
+                    && $0.startedAt < interval.end
+                    && $0.startedAt <= date
+                    && $0.currencyCode == profile.currencyCode
+            }
+            .reduce(0) { $0 + $1.earnings(asOf: date) }
+    }
+
+    func reloadFromDisk() {
+        guard
+            let data = defaults.data(forKey: Self.snapshotKey),
+            let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data)
+        else { return }
+
+        profile = snapshot.profile
+        sessions = snapshot.sessions.sorted { $0.startedAt > $1.startedAt }
     }
 
     func durationToday(asOf date: Date = .now) -> TimeInterval {

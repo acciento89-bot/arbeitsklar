@@ -31,6 +31,16 @@ struct TodayView: View {
                     metrics(at: .now)
                 }
 
+                if store.profile.monthlyEarningsGoal > 0 {
+                    if store.activeSession != nil {
+                        TimelineView(.periodic(from: .now, by: 60)) { timeline in
+                            MonthlyGoalCard(date: timeline.date)
+                        }
+                    } else {
+                        MonthlyGoalCard(date: .now)
+                    }
+                }
+
                 privacyNote
             }
             .padding(.horizontal, 20)

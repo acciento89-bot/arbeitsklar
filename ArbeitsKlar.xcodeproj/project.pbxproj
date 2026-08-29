@@ -29,6 +29,9 @@
 		A10000000000000000000014 /* ShiftReminderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* ShiftReminderController.swift */; };
 		A10000000000000000000015 /* HistoryAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019 /* HistoryAnalytics.swift */; };
 		A10000000000000000000016 /* HistoryInsightsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* HistoryInsightsCard.swift */; };
+		A10000000000000000000017 /* AddSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001B /* AddSessionView.swift */; };
+		A10000000000000000000018 /* MonthlyGoalCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001C /* MonthlyGoalCard.swift */; };
+		A10000000000000000000019 /* ShiftAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001D /* ShiftAppIntents.swift */; };
 		A10000000000000000000020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* Assets.xcassets */; };
 		A10000000000000000000021 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
 		A10000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* PrivacyInfo.xcprivacy */; };
@@ -91,6 +94,9 @@
 		B10000000000000000000018 /* ShiftReminderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftReminderController.swift; sourceTree = "<group>"; };
 		B10000000000000000000019 /* HistoryAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryAnalytics.swift; sourceTree = "<group>"; };
 		B1000000000000000000001A /* HistoryInsightsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryInsightsCard.swift; sourceTree = "<group>"; };
+		B1000000000000000000001B /* AddSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionView.swift; sourceTree = "<group>"; };
+		B1000000000000000000001C /* MonthlyGoalCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyGoalCard.swift; sourceTree = "<group>"; };
+		B1000000000000000000001D /* ShiftAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftAppIntents.swift; sourceTree = "<group>"; };
 		B10000000000000000000020 /* ArbeitsKlar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArbeitsKlar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000001 /* ArbeitsKlarLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArbeitsKlarLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -136,6 +142,7 @@
 				D1000000000000000000000B /* Services */,
 				D1000000000000000000000C /* Stores */,
 				D1000000000000000000000D /* Utilities */,
+				D10000000000000000000012 /* Intents */,
 				D1000000000000000000000E /* Resources */,
 				D1000000000000000000000F /* Supporting */,
 			);
@@ -183,6 +190,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000005 /* TodayView.swift */,
+				B1000000000000000000001C /* MonthlyGoalCard.swift */,
 			);
 			path = Today;
 			sourceTree = "<group>";
@@ -195,6 +203,7 @@
 				B10000000000000000000017 /* WorkSessionCSVDocument.swift */,
 				B10000000000000000000019 /* HistoryAnalytics.swift */,
 				B1000000000000000000001A /* HistoryInsightsCard.swift */,
+				B1000000000000000000001B /* AddSessionView.swift */,
 			);
 			path = History;
 			sourceTree = "<group>";
@@ -258,6 +267,14 @@
 				B1000000000000000000000E /* WorkDurationFormatter.swift */,
 			);
 			path = Utilities;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000012 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000001D /* ShiftAppIntents.swift */,
+			);
+			path = Intents;
 			sourceTree = "<group>";
 		};
 		D1000000000000000000000E /* Resources */ = {
@@ -422,6 +439,9 @@
 				A10000000000000000000014 /* ShiftReminderController.swift in Sources */,
 				A10000000000000000000015 /* HistoryAnalytics.swift in Sources */,
 				A10000000000000000000016 /* HistoryInsightsCard.swift in Sources */,
+				A10000000000000000000017 /* AddSessionView.swift in Sources */,
+				A10000000000000000000018 /* MonthlyGoalCard.swift in Sources */,
+				A10000000000000000000019 /* ShiftAppIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
