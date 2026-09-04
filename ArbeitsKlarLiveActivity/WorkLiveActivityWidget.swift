@@ -25,11 +25,11 @@ struct WorkLiveActivityWidget: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("live_activity.earned")
+                            Text(amountTitle(for: context.state))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text(
-                                context.state.earnedAmount,
+                                displayedAmount(for: context.state),
                                 format: .currency(code: context.state.currencyCode)
                             )
                             .font(.title2.bold())
@@ -49,6 +49,12 @@ struct WorkLiveActivityWidget: Widget {
                         .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, 4)
+
+                    if context.state.isRunning, !context.state.isPaused {
+                        activityProgress(for: context.state)
+                            .tint(.blue)
+                            .padding(.horizontal, 4)
+                    }
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.fill" : "bolt.fill")
@@ -76,6 +82,32 @@ struct WorkLiveActivityWidget: Widget {
             Text(WorkDurationFormatter.string(from: state.elapsedSeconds))
         }
     }
+
+    private func displayedAmount(for state: WorkActivityAttributes.ContentState) -> Double {
+        state.isRunning && !state.isPaused
+            ? state.projectedEarnings
+            : state.earnedAmount
+    }
+
+    private func amountTitle(
+        for state: WorkActivityAttributes.ContentState
+    ) -> LocalizedStringKey {
+        state.isRunning && !state.isPaused
+            ? "live_activity.shift_target"
+            : "live_activity.earned"
+    }
+
+    @ViewBuilder
+    private func activityProgress(
+        for state: WorkActivityAttributes.ContentState
+    ) -> some View {
+        if state.timerReferenceDate < state.plannedWorkEndDate {
+            ProgressView(
+                timerInterval: state.timerReferenceDate...state.plannedWorkEndDate,
+                countsDown: false
+            )
+        }
+    }
 }
 
 private struct LockScreenWorkView: View {
@@ -98,13 +130,18 @@ private struct LockScreenWorkView: View {
                     .textCase(.uppercase)
                     .foregroundStyle(.secondary)
 
-                Text(
-                    context.state.earnedAmount,
-                    format: .currency(code: context.state.currencyCode)
-                )
-                .font(.title.bold())
-                .monospacedDigit()
-                .contentTransition(.numericText(value: context.state.earnedAmount))
+                amountLabel
+                    .font(.title.bold())
+                    .monospacedDigit()
+
+                if context.state.isRunning, !context.state.isPaused {
+                    ProgressView(
+                        timerInterval: context.state.timerReferenceDate...context.state.plannedWorkEndDate,
+                        countsDown: false
+                    )
+                    .tint(.blue)
+                    .accessibilityLabel("live_activity.progress")
+                }
             }
 
             Spacer()
@@ -134,6 +171,19 @@ private struct LockScreenWorkView: View {
             return "live_activity.running"
         }
         return "live_activity.finished"
+    }
+
+    private var amountLabel: Text {
+        let labelKey: LocalizedStringKey = context.state.isRunning && !context.state.isPaused
+            ? "live_activity.shift_target"
+            : "live_activity.earned"
+        let amount = context.state.isRunning && !context.state.isPaused
+            ? context.state.projectedEarnings
+            : context.state.earnedAmount
+
+        return Text(labelKey)
+            + Text(" ")
+            + Text(amount, format: .currency(code: context.state.currencyCode))
     }
 }
 

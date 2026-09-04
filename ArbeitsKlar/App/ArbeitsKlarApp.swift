@@ -37,6 +37,11 @@ struct ArbeitsKlarApp: App {
             if scenePhase == .active {
                 store.reloadFromDisk()
             }
+
+            // Capture the newest pause/earnings state when the app is locked or
+            // backgrounded. The activity itself uses system-driven timer and
+            // progress views so it remains truthful after app suspension.
+            Task { await store.refreshLiveActivity() }
         }
     }
 }

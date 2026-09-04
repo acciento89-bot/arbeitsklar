@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 import StoreKit
 
 enum PurchaseIssue: Error {
@@ -47,21 +48,23 @@ final class PurchaseManager {
     @ObservationIgnored
     private let entitlementOverride: Bool
 
+    @ObservationIgnored
+    private let logger = Logger(
+        subsystem: "de.kamilunavo.arbeitsklar",
+        category: "StoreKit"
+    )
+
     init(isPro: Bool = false) {
         self.isPro = isPro
         self.entitlementOverride = isPro
     }
 
     func prepare() async {
-        guard !hasPrepared else { return }
+        guard !hasPrepared || product == nil else { return }
         hasPrepared = true
         isLoading = true
 
-        do {
-            product = try await Product.products(for: [Self.proProductID]).first
-        } catch {
-            product = nil
-        }
+        await loadProduct()
 
         await refreshEntitlements()
         isLoading = false
@@ -77,10 +80,15 @@ final class PurchaseManager {
     }
 
     func purchase() async throws {
-        guard let product else { throw PurchaseIssue.productUnavailable }
         isPurchasing = true
         status = .idle
         defer { isPurchasing = false }
+
+        // App Store sandbox metadata can briefly become stale after a build or
+        // IAP change. Resolve a fresh Product immediately before presenting the
+        // system purchase sheet instead of reusing launch-time metadata.
+        await loadProduct()
+        guard let product else { throw PurchaseIssue.productUnavailable }
 
         do {
             let result = try await product.purchase()
@@ -102,6 +110,7 @@ final class PurchaseManager {
         } catch let issue as PurchaseIssue {
             throw issue
         } catch {
+            logger.error("Purchase failed: \(String(describing: error), privacy: .public)")
             throw PurchaseIssue.purchaseFailed
         }
     }
@@ -130,6 +139,19 @@ final class PurchaseManager {
         }
 
         isPro = hasProEntitlement || entitlementOverride
+    }
+
+    private func loadProduct() async {
+        do {
+            let products = try await Product.products(for: [Self.proProductID])
+            product = products.first { $0.id == Self.proProductID }
+            if product == nil {
+                logger.error("Configured Pro product was not returned by the App Store")
+            }
+        } catch {
+            product = nil
+            logger.error("Product loading failed: \(String(describing: error), privacy: .public)")
+        }
     }
 }
 

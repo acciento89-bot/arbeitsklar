@@ -85,8 +85,11 @@ final class LiveActivityController {
             updatedAt: date,
             elapsedSeconds: session.duration(asOf: date),
             earnedAmount: session.earnings(asOf: date),
+            projectedEarnings: session.projectedEarningsForPlannedDuration(asOf: date),
             hourlyRate: session.hourlyRate,
             currencyCode: session.currencyCode,
+            plannedWorkEndDate: session.timerReferenceDate(asOf: date)
+                .addingTimeInterval(session.plannedHours * 3_600),
             isRunning: isRunning,
             isPaused: session.isPaused
         )
