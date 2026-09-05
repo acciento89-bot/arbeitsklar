@@ -33,7 +33,7 @@ jobs:
           test "$(grep -c 'applicationId = "de.kamilunavo.arbeitsklar"' android/app/build.gradle.kts)" -eq 1
           test "$(grep -c 'versionName = "1.0.1"' android/app/build.gradle.kts)" -eq 1
           test "$(grep -c 'versionCode = 4' android/app/build.gradle.kts)" -eq 1
-          ! rg -i "webview|loadurl|localhost" android/app/src/main
+          ! grep -R -E -i "webview|loadurl|localhost" android/app/src/main
       - name: Unit tests
         run: gradle -p android testDebugUnitTest
       - name: Debug bundle
