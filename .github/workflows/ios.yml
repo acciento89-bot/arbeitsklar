@@ -1,0 +1,38 @@
+name: iOS
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
+      - name: Build for iOS Simulator
+        run: >
+          xcodebuild
+          -project ArbeitsKlar.xcodeproj
+          -scheme ArbeitsKlar
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
+
+      - name: Build Pro Preview for iOS Simulator
+        run: >
+          xcodebuild
+          -project ArbeitsKlar.xcodeproj
+          -scheme 'ArbeitsKlar Pro Preview'
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/ArbeitsKlarPreviewDerivedData"
+          CODE_SIGNING_ALLOWED=NO
+          build

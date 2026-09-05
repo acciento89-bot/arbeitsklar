@@ -1,0 +1,110 @@
+import SwiftUI
+
+enum AppPreferences {
+    static let hasCompletedOnboarding = "has_completed_onboarding_v1"
+}
+
+enum AppTab: String, CaseIterable, Identifiable {
+    case today
+    case planner
+    case history
+    case settings
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .today: "tab.today"
+        case .planner: "tab.planner"
+        case .history: "tab.history"
+        case .settings: "tab.settings"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .today: "bolt.fill"
+        case .planner: "calendar"
+        case .history: "clock.arrow.circlepath"
+        case .settings: "slider.horizontal.3"
+        }
+    }
+}
+
+@MainActor
+struct AppView: View {
+    @Environment(WorkSessionStore.self) private var store
+    @Environment(PurchaseManager.self) private var purchases
+    @Environment(AppTheme.self) private var theme
+    @AppStorage(AppPreferences.hasCompletedOnboarding) private var hasCompletedOnboarding = false
+    @State private var selectedTab: AppTab = .today
+    @State private var showsOnboarding = false
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            NavigationStack {
+                TodayView()
+            }
+            .tabItem {
+                Label(AppTab.today.title, systemImage: AppTab.today.systemImage)
+            }
+            .tag(AppTab.today)
+
+            NavigationStack {
+                PlannerView()
+            }
+            .tabItem {
+                Label(AppTab.planner.title, systemImage: AppTab.planner.systemImage)
+            }
+            .tag(AppTab.planner)
+
+            NavigationStack {
+                HistoryView(selectedTab: $selectedTab)
+            }
+            .tabItem {
+                Label(AppTab.history.title, systemImage: AppTab.history.systemImage)
+            }
+            .tag(AppTab.history)
+
+            NavigationStack {
+                SettingsView()
+            }
+            .tabItem {
+                Label(AppTab.settings.title, systemImage: AppTab.settings.systemImage)
+            }
+            .tag(AppTab.settings)
+        }
+        .tint(theme.accent)
+        .onAppear {
+            showsOnboarding = !hasCompletedOnboarding
+        }
+        .onChange(of: hasCompletedOnboarding) { _, isCompleted in
+            showsOnboarding = !isCompleted
+        }
+        .onChange(of: purchases.isPrepared, initial: true) {
+            enforceProEntitlement()
+        }
+        .onChange(of: purchases.isPro) {
+            enforceProEntitlement()
+        }
+        .fullScreenCover(isPresented: $showsOnboarding) {
+            OnboardingView()
+        }
+    }
+
+    private func enforceProEntitlement() {
+        guard purchases.isPrepared else { return }
+        theme.enforceEntitlement(isPro: purchases.isPro)
+        if !purchases.isPro, store.profile.shiftRemindersEnabled {
+            Task { await store.setShiftRemindersEnabled(false) }
+        }
+    }
+}
+
+#Preview {
+    AppView()
+        .environment(WorkSessionStore.preview)
+        .environment(PurchaseManager.previewFree)
+        .environment(AppTheme())
+        .preferredColorScheme(.dark)
+}
