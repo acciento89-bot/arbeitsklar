@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -60,7 +61,7 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
     val store=remember{WorkStore(context)}
     val billing=remember{BillingManager(context)}
     var refresh by remember{mutableIntStateOf(0)}
-    val reload={refresh++}
+    val reload: () -> Unit = { refresh += 1 }
     val colors=darkColorScheme(primary=Blue,secondary=Mint,background=Bg,surface=Surface,onBackground=Color.White,onSurface=Color.White)
     MaterialTheme(colorScheme=colors){
         if(!store.onboarded)Onboarding(store,reload)
