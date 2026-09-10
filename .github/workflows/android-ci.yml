@@ -31,8 +31,12 @@ jobs:
       - name: Validate native Android release
         run: |
           test "$(grep -c 'applicationId = "de.kamilunavo.arbeitsklar"' android/app/build.gradle.kts)" -eq 1
-          test "$(grep -c 'versionName = "1.0.1"' android/app/build.gradle.kts)" -eq 1
-          test "$(grep -c 'versionCode = 4' android/app/build.gradle.kts)" -eq 1
+          test "$(grep -c 'versionName = "1.0.2"' android/app/build.gradle.kts)" -eq 1
+          test "$(grep -c 'versionCode = 5' android/app/build.gradle.kts)" -eq 1
+          grep -Fq 'android:icon="@mipmap/ic_launcher"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:roundIcon="@mipmap/ic_launcher_round"' android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           ! grep -R -E -i "webview|loadurl|localhost" android/app/src/main
       - name: Unit tests
         run: gradle -p android testDebugUnitTest
@@ -42,6 +46,6 @@ jobs:
         run: gradle -p android bundleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: arbeitsklar-android-unsigned-aab
+          name: ArbeitsKlar-1.0.2-5-unsigned-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
