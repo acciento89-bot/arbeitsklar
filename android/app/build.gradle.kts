@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val uploadKeystorePath = System.getenv("ANDROID_UPLOAD_KEYSTORE_PATH")
+val uploadStorePassword = System.getenv("ANDROID_UPLOAD_STORE_PASSWORD")
+val uploadKeyAlias = System.getenv("ANDROID_UPLOAD_KEY_ALIAS")
+val uploadKeyPassword = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")
+
 android {
     namespace = "de.kamilunavo.arbeitsklar"
     compileSdk = 36
@@ -14,10 +19,26 @@ android {
         versionName = "1.0.2"
     }
     buildFeatures { compose = true; buildConfig = true }
+
+    signingConfigs {
+        create("releaseUpload") {
+            if (!uploadKeystorePath.isNullOrBlank()) {
+                storeFile = file(uploadKeystorePath)
+                storeType = "JKS"
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (!uploadKeystorePath.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("releaseUpload")
+            }
         }
     }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
