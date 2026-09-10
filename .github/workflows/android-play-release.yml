@@ -1,0 +1,117 @@
+name: ArbeitsKlar Android Play Release
+
+on:
+  push:
+    branches:
+      - 'play-release/**'
+    paths:
+      - 'android/**'
+      - 'store/google-play/**'
+      - '.github/workflows/android-play-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+      ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+      ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android 16 SDK
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Set up Gradle 9.5
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '9.5.0'
+      - name: Validate Google Play icon
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import struct, zlib
+          p = Path('store/google-play/icon-512.png')
+          data = p.read_bytes()
+          assert data[:8] == b'\x89PNG\r\n\x1a\n', 'not a PNG'
+          pos = 8
+          ihdr = False
+          iend = False
+          while pos < len(data):
+              assert pos + 12 <= len(data), 'truncated PNG chunk header'
+              length = struct.unpack('>I', data[pos:pos+4])[0]
+              kind = data[pos+4:pos+8]
+              end = pos + 12 + length
+              assert end <= len(data), f'truncated {kind!r} chunk'
+              payload = data[pos+8:pos+8+length]
+              expected = struct.unpack('>I', data[pos+8+length:pos+12+length])[0]
+              actual = zlib.crc32(kind + payload) & 0xffffffff
+              assert actual == expected, f'bad CRC for {kind!r}'
+              if kind == b'IHDR':
+                  width, height, bit_depth, color_type, compression, filtering, interlace = struct.unpack('>IIBBBBB', payload)
+                  assert (width, height) == (512, 512)
+                  assert bit_depth == 8
+                  assert color_type == 6, 'Play icon must be RGBA/32-bit'
+                  ihdr = True
+              if kind == b'IEND':
+                  iend = True
+              pos = end
+          assert ihdr and iend and pos == len(data), 'incomplete PNG'
+          print(f'Play icon OK: {len(data)} bytes, 512x512 RGBA')
+          PY
+      - name: Validate existing Play signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n '${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}'
+          test -n "$ANDROID_UPLOAD_STORE_PASSWORD"
+          test -n "$ANDROID_UPLOAD_KEY_ALIAS"
+          test -n "$ANDROID_UPLOAD_KEY_PASSWORD"
+      - name: Restore existing Play upload keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' '${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}' | base64 --decode > "$RUNNER_TEMP/arbeitsklar-upload.jks"
+          chmod 600 "$RUNNER_TEMP/arbeitsklar-upload.jks"
+          echo "ANDROID_UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/arbeitsklar-upload.jks" >> "$GITHUB_ENV"
+      - name: Unit tests
+        run: gradle -p android testDebugUnitTest --stacktrace
+      - name: Build signed release AAB
+        run: gradle -p android bundleRelease --stacktrace
+      - name: Verify signed Play bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB='android/app/build/outputs/bundle/release/app-release.aab'
+          OUT='android/app/build/outputs/bundle/release/ArbeitsKlar-1.0.2-5-PlayStore.aab'
+          test -s "$AAB"
+          grep -Fq 'applicationId = "de.kamilunavo.arbeitsklar"' android/app/build.gradle.kts
+          grep -Fq 'targetSdk = 36' android/app/build.gradle.kts
+          grep -Fq 'versionCode = 5' android/app/build.gradle.kts
+          grep -Fq 'versionName = "1.0.2"' android/app/build.gradle.kts
+          grep -Fq 'android:icon="@mipmap/ic_launcher"' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:roundIcon="@mipmap/ic_launcher_round"' android/app/src/main/AndroidManifest.xml
+          jarsigner -verify -verbose -certs "$AAB" | tee /tmp/jarsigner.txt
+          grep -Fq 'jar verified.' /tmp/jarsigner.txt
+          cp "$AAB" "$OUT"
+          sha256sum "$OUT" > "$OUT.sha256"
+      - name: Upload signed Play bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArbeitsKlar-1.0.2-5-PlayStore
+          path: |
+            android/app/build/outputs/bundle/release/ArbeitsKlar-1.0.2-5-PlayStore.aab
+            android/app/build/outputs/bundle/release/ArbeitsKlar-1.0.2-5-PlayStore.aab.sha256
+          if-no-files-found: error
+          retention-days: 14
