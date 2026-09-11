@@ -1,0 +1,33 @@
+name: Verify existing Google Play upload certificate
+on:
+  push:
+    branches: [release/verify-existing-upload-key]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compare existing key with Google Play certificate
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || { echo 'Existing repository keystore secret is missing'; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo 'Existing keystore password secret is missing'; exit 1; }
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          chmod 600 "$RUNNER_TEMP/upload.jks"
+          trap 'rm -f "$RUNNER_TEMP/upload.jks"' EXIT
+          keytool -exportcert -keystore "$RUNNER_TEMP/upload.jks" -alias "${KEY_ALIAS:-upload}" -storepass:env KEYSTORE_PASSWORD -rfc -file "$RUNNER_TEMP/upload.pem"
+          fingerprint=$(openssl x509 -in "$RUNNER_TEMP/upload.pem" -noout -fingerprint -sha1 | cut -d= -f2)
+          echo "Existing upload certificate SHA1: $fingerprint"
+          test "$fingerprint" = 'E8:CA:39:C0:34:F5:34:90:D9:99:8D:B0:93:C1:57:FC:67:E1:B6:C1' || { echo 'Certificate does not match the existing Play Console requirement'; exit 1; }
+          echo 'Existing repository key matches Google Play; no key change required'
