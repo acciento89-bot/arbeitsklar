@@ -41,6 +41,8 @@ jobs:
           grep -Fq 'store/google-play/icon-512.png' android/app/build.gradle.kts
           test -s store/google-play/icon-512.png
           ! grep -R -E -i "webview|loadurl|localhost" android/app/src/main
+      - name: Verify launcher/store icon parity
+        run: gradle -p android verifyLauncherIconParity
       - name: Unit tests
         run: gradle -p android testDebugUnitTest
       - name: Debug bundle
@@ -50,7 +52,7 @@ jobs:
       - name: Verify generated launcher is byte-identical to Play icon
         run: |
           set -euo pipefail
-          GENERATED='android/app/build/generated/storeIconRes/drawable-nodpi/arbeitsklar_store_icon.png'
+          GENERATED='android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png'
           test -s "$GENERATED"
           cmp -s store/google-play/icon-512.png "$GENERATED"
           sha256sum store/google-play/icon-512.png "$GENERATED"
