@@ -3,11 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val generatedStoreIconRes = layout.buildDirectory.dir("generated/storeIconRes")
-val generatedStoreIconResDir = layout.buildDirectory.get().dir("generated/storeIconRes").asFile
+val launcherResDir = file("src/main/res/drawable-nodpi")
+val generatedLauncherIcon = launcherResDir.resolve("arbeitsklar_store_icon.png")
 val generateStoreLauncherIcon by tasks.registering(Copy::class) {
     from(rootProject.projectDir.parentFile.resolve("store/google-play/icon-512.png"))
-    into(generatedStoreIconResDir.resolve("drawable-nodpi"))
+    into(launcherResDir)
     rename { "arbeitsklar_store_icon.png" }
 }
 
@@ -22,7 +22,6 @@ android {
         versionName = "1.0.3"
     }
     buildFeatures { compose = true; buildConfig = true }
-    sourceSets["main"].res.srcDir(generatedStoreIconResDir)
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -33,6 +32,16 @@ android {
 }
 
 tasks.named("preBuild").configure { dependsOn(generateStoreLauncherIcon) }
+
+tasks.register("verifyLauncherIconParity") {
+    dependsOn(generateStoreLauncherIcon)
+    doLast {
+        val storeIcon = rootProject.projectDir.parentFile.resolve("store/google-play/icon-512.png")
+        check(storeIcon.readBytes().contentEquals(generatedLauncherIcon.readBytes())) {
+            "Android launcher icon must be byte-identical to the Google Play icon"
+        }
+    }
+}
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
