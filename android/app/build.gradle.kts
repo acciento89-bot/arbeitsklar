@@ -4,9 +4,10 @@ plugins {
 }
 
 val generatedStoreIconRes = layout.buildDirectory.dir("generated/storeIconRes")
+val generatedStoreIconResDir = layout.buildDirectory.get().dir("generated/storeIconRes").asFile
 val generateStoreLauncherIcon by tasks.registering(Copy::class) {
     from(rootProject.projectDir.parentFile.resolve("store/google-play/icon-512.png"))
-    into(generatedStoreIconRes.map { it.dir("drawable-nodpi") })
+    into(generatedStoreIconResDir.resolve("drawable-nodpi"))
     rename { "arbeitsklar_store_icon.png" }
 }
 
@@ -21,7 +22,7 @@ android {
         versionName = "1.0.3"
     }
     buildFeatures { compose = true; buildConfig = true }
-    sourceSets["main"].res.srcDir(generatedStoreIconRes)
+    sourceSets["main"].res.srcDir(generatedStoreIconResDir)
     buildTypes {
         release {
             isMinifyEnabled = true
