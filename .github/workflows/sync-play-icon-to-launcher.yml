@@ -1,0 +1,55 @@
+name: Sync Play icon to launcher
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-play-icon-to-launcher.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Make the installed launcher use the exact Play artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android/app/src/main/res/drawable-nodpi
+          cp store/google-play/icon-512.png android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text()
+          text = text.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/arbeitsklar_store_icon"')
+          text = text.replace('android:roundIcon="@mipmap/ic_launcher_round"', 'android:roundIcon="@drawable/arbeitsklar_store_icon"')
+          manifest.write_text(text)
+
+          gradle = Path('android/app/build.gradle.kts')
+          text = gradle.read_text().replace('versionCode = 5', 'versionCode = 6').replace('versionName = "1.0.2"', 'versionName = "1.0.3"')
+          gradle.write_text(text)
+
+          ci = Path('.github/workflows/android-ci.yml')
+          text = ci.read_text()
+          text = text.replace('versionName = \\"1.0.2\\"', 'versionName = \\"1.0.3\\"')
+          text = text.replace('versionCode = 5', 'versionCode = 6')
+          text = text.replace('android:icon=\\"@mipmap/ic_launcher\\"', 'android:icon=\\"@drawable/arbeitsklar_store_icon\\"')
+          text = text.replace('android:roundIcon=\\"@mipmap/ic_launcher_round\\"', 'android:roundIcon=\\"@drawable/arbeitsklar_store_icon\\"')
+          text = text.replace('test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml\n          test -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml', 'test -f android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png\n          cmp -s store/google-play/icon-512.png android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png')
+          text = text.replace('ArbeitsKlar-1.0.2-5-unsigned-aab', 'ArbeitsKlar-1.0.3-6-unsigned-aab')
+          ci.write_text(text)
+
+          readme = Path('store/google-play/ICON-RECOVERY.md')
+          readme.write_text('''# Canonical Google Play / Android icon\n\n`icon-512.png` is the canonical ArbeitsKlar identity currently stored in Google Play. Android now packages the exact same PNG bytes as its installed launcher icon so the on-device icon and hi-res Store icon cannot diverge again.\n\nDo not introduce a separate launcher symbol. The release gate compares both files byte-for-byte before every Android build.\n''')
+          PY
+          cmp -s store/google-play/icon-512.png android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png
+          git config user.name 'Kamilunavo Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add android/app/src/main/AndroidManifest.xml android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png android/app/build.gradle.kts .github/workflows/android-ci.yml store/google-play/ICON-RECOVERY.md
+          git commit -m 'Use exact Google Play artwork as ArbeitsKlar launcher'
+          git push origin HEAD:main
