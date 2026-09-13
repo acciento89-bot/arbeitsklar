@@ -5,17 +5,23 @@ on:
     paths:
       - "android/**"
       - "store/google-play/**"
+      - "ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
       - ".github/workflows/android-ci.yml"
   push:
     branches: [main]
     paths:
       - "android/**"
       - "store/google-play/**"
+      - "ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
       - ".github/workflows/android-ci.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: arbeitsklar-android-ci
+  cancel-in-progress: true
 
 jobs:
   android:
@@ -37,9 +43,10 @@ jobs:
           test "$(grep -c 'versionName = "1.0.3"' android/app/build.gradle.kts)" -eq 1
           test "$(grep -c 'versionCode = 6' android/app/build.gradle.kts)" -eq 1
           grep -Fq 'android:icon="@drawable/arbeitsklar_store_icon"' android/app/src/main/AndroidManifest.xml
-          grep -Fq 'android:roundIcon="@drawable/arbeitsklar_store_icon"' android/app/src/main/AndroidManifest.xml
-          grep -Fq 'store/google-play/icon-512.png' android/app/build.gradle.kts
+          ! grep -Fq 'android:roundIcon=' android/app/src/main/AndroidManifest.xml
+          grep -Fq 'ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png' android/app/build.gradle.kts
           test -s store/google-play/icon-512.png
+          test -z "$(find android/app/src/main/res -type f \( -iname '*adaptive*' -o -iname '*foreground*' -o -iname '*background*' \) -print -quit)"
           ! grep -R -E -i "webview|loadurl|localhost" android/app/src/main
       - name: Verify launcher/store icon parity
         run: gradle -p android verifyLauncherIconParity
@@ -49,13 +56,14 @@ jobs:
         run: gradle -p android bundleDebug
       - name: Release bundle
         run: gradle -p android bundleRelease
-      - name: Verify generated launcher is byte-identical to Play icon
+      - name: Verify launcher is byte-identical to iOS icon
         run: |
           set -euo pipefail
-          GENERATED='android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png'
-          test -s "$GENERATED"
-          cmp -s store/google-play/icon-512.png "$GENERATED"
-          sha256sum store/google-play/icon-512.png "$GENERATED"
+          IOS='ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png'
+          ANDROID='android/app/src/main/res/drawable-nodpi/arbeitsklar_store_icon.png'
+          test -s "$ANDROID"
+          cmp -s "$IOS" "$ANDROID"
+          sha256sum "$IOS" "$ANDROID"
       - uses: actions/upload-artifact@v4
         with:
           name: ArbeitsKlar-1.0.3-6-unsigned-aab
