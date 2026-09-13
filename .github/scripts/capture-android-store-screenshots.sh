@@ -138,7 +138,12 @@ mkdir -p "$output_dir"
 rm -f "$output_dir"/*.png
 adb install -r "$apk_path"
 adb shell settings put global hide_error_dialogs 1
-adb shell cmd locale set-app-locales "$PACKAGE_NAME" --user 0 de-DE
+adb shell cmd locale set-app-locales "$PACKAGE_NAME" --user 0 --locales de-DE
+app_locales="$(adb shell cmd locale get-app-locales "$PACKAGE_NAME" --user 0)"
+if ! grep -Fq 'are [de-DE]' <<<"$app_locales"; then
+  echo "Expected de-DE app locale; refusing to capture: $app_locales" >&2
+  exit 1
+fi
 stabilize_launcher
 launch_app
 assert_clean_foreground
