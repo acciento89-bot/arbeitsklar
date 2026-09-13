@@ -3,13 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val launcherResDir = file("src/main/res/drawable-nodpi")
-val generatedLauncherIcon = launcherResDir.resolve("arbeitsklar_store_icon.png")
-val generateStoreLauncherIcon by tasks.registering(Copy::class) {
-    from(rootProject.projectDir.parentFile.resolve("store/google-play/icon-512.png"))
-    into(launcherResDir)
-    rename { "arbeitsklar_store_icon.png" }
-}
+val iosLauncherIcon = rootProject.projectDir.parentFile.resolve("ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png")
+val androidLauncherIcon = file("src/main/res/drawable-nodpi/arbeitsklar_store_icon.png")
 
 android {
     namespace = "de.kamilunavo.arbeitsklar"
@@ -31,14 +26,10 @@ android {
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 
-tasks.named("preBuild").configure { dependsOn(generateStoreLauncherIcon) }
-
 tasks.register("verifyLauncherIconParity") {
-    dependsOn(generateStoreLauncherIcon)
     doLast {
-        val storeIcon = rootProject.projectDir.parentFile.resolve("store/google-play/icon-512.png")
-        check(storeIcon.readBytes().contentEquals(generatedLauncherIcon.readBytes())) {
-            "Android launcher icon must be byte-identical to the Google Play icon"
+        check(iosLauncherIcon.readBytes().contentEquals(androidLauncherIcon.readBytes())) {
+            "Android launcher icon must be byte-identical to the canonical iOS app icon"
         }
     }
 }
