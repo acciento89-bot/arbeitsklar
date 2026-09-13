@@ -47,7 +47,7 @@ jobs:
           profile: pixel_7
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: PACKAGE_NAME='de.kamilunavo.arbeitsklar' WAIT_TEXT='ArbeitsKlar' SECOND_ACTION='tap' SECOND_TEXT='Weiter' OUTPUT_DIR='store/google-play/screenshots/de-DE' bash "$GITHUB_WORKSPACE/.github/scripts/capture-android-store-screenshots.sh"
+          script: PACKAGE_NAME='de.kamilunavo.arbeitsklar' WAIT_TEXT='ArbeitsKlar' SECOND_ACTION='tap' SECOND_TEXT='Continue' OUTPUT_DIR='store/google-play/screenshots/de-DE' bash "$GITHUB_WORKSPACE/.github/scripts/capture-android-store-screenshots.sh"
 
       - name: Upload authentic screenshots
         uses: actions/upload-artifact@v4
