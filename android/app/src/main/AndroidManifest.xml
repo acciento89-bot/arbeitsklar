@@ -5,7 +5,6 @@
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:icon="@drawable/arbeitsklar_store_icon"
-        android:roundIcon="@drawable/arbeitsklar_store_icon"
         android:label="ArbeitsKlar"
         android:supportsRtl="true"
         android:theme="@style/Theme.ArbeitsKlar">
