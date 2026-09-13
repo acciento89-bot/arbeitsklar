@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -47,8 +48,7 @@ private val Mint=Color(0xFF3AD9A1)
 private val Amber=Color(0xFFFFB845)
 private val Secondary=Color.White.copy(alpha=.64f)
 private val Border=Color.White.copy(alpha=.08f)
-private val german get()=Locale.getDefault().language=="de"
-private fun tr(de:String,en:String)=if(german)de else en
+@Composable private fun tr(de:String,en:String):String=if(LocalConfiguration.current.locales.get(0).language=="de")de else en
 
 class MainActivity:ComponentActivity(){
     override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{ArbeitsKlarApp()}}
@@ -62,10 +62,12 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
     val billing=remember{BillingManager(context)}
     var refresh by remember{mutableIntStateOf(0)}
     val reload: () -> Unit = { refresh += 1 }
-    val colors=darkColorScheme(primary=Blue,secondary=Mint,background=Bg,surface=Surface,onBackground=Color.White,onSurface=Color.White)
+    val colors=darkColorScheme(primary=Blue,secondary=Mint,background=Bg,surface=Surface,onPrimary=Bg,onSecondary=Bg,onBackground=Color.White,onSurface=Color.White)
     MaterialTheme(colorScheme=colors){
-        if(!store.onboarded)Onboarding(store,reload)
-        else MainShell(store,billing,refresh,reload)
+        Surface(modifier=Modifier.fillMaxSize(),color=Color.Transparent,contentColor=MaterialTheme.colorScheme.onBackground){
+            if(!store.onboarded)Onboarding(store,reload)
+            else MainShell(store,billing,refresh,reload)
+        }
     }
 }
 
@@ -77,7 +79,7 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
         Triple(tr("BESSER PLANEN","PLAN AHEAD"),tr("Schichten planen und deinen Monat im Blick behalten.","Plan shifts and keep your month in view."),Icons.Default.CalendarMonth)
     )
     Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Blue.copy(alpha=.22f),Bg),radius=900f))){
-        Column(Modifier.fillMaxSize().statusBarsPadding().padding(24.dp)){
+        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(24.dp)){
             Row(verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.Bolt,null,tint=Mint);Text("ArbeitsKlar",fontWeight=FontWeight.Bold,fontSize=19.sp);Spacer(Modifier.weight(1f));if(page<2)TextButton({store.onboarded=true;reload()}){Text(tr("Überspringen","Skip"))}}
             Spacer(Modifier.weight(1f))
             Box(Modifier.size(96.dp).background(Blue.copy(alpha=.14f),RoundedCornerShape(30.dp)),contentAlignment=Alignment.Center){Icon(pages[page].third,null,tint=if(page==1)Mint else Blue,modifier=Modifier.size(48.dp))}
@@ -192,7 +194,7 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
 
 private fun money(value:Double,currency:String):String=runCatching{NumberFormat.getCurrencyInstance().apply{this.currency=Currency.getInstance(currency)}.format(value)}.getOrElse{"%.2f %s".format(value,currency)}
 private fun duration(ms:Long):String{val minutes=ms/60_000;return "%02d:%02d".format(minutes/60,minutes%60)}
-private fun hours(value:Double)=tr("%.1f Std.".format(value),"%.1f hrs".format(value))
+@Composable private fun hours(value:Double)=tr("%.1f Std.".format(value),"%.1f hrs".format(value))
 private fun dateTime(ms:Long)=DateFormat.getDateTimeInstance(DateFormat.MEDIUM,DateFormat.SHORT).format(Date(ms))
 private fun sameDay(a:Long,b:Long):Boolean{val x=Calendar.getInstance().apply{timeInMillis=a};val y=Calendar.getInstance().apply{timeInMillis=b};return x.get(Calendar.YEAR)==y.get(Calendar.YEAR)&&x.get(Calendar.DAY_OF_YEAR)==y.get(Calendar.DAY_OF_YEAR)}
 private fun sameMonth(a:Long):Boolean{val x=Calendar.getInstance().apply{timeInMillis=a};val y=Calendar.getInstance();return x.get(Calendar.YEAR)==y.get(Calendar.YEAR)&&x.get(Calendar.MONTH)==y.get(Calendar.MONTH)}
