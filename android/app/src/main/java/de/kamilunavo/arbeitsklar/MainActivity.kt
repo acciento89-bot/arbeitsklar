@@ -2,8 +2,10 @@ package de.kamilunavo.arbeitsklar
 
 import android.Manifest
 import android.app.Activity
+import android.app.LocaleManager
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,7 +49,14 @@ private val Mint=Color(0xFF3AD9A1)
 private val Amber=Color(0xFFFFB845)
 private val Secondary=Color.White.copy(alpha=.64f)
 private val Border=Color.White.copy(alpha=.08f)
-@Composable private fun tr(de:String,en:String):String=if(LocalConfiguration.current.locales.get(0).language=="de")de else en
+@Composable private fun tr(de:String,en:String):String{
+    val context=LocalContext.current
+    val language=if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU){
+        val appLocales=context.getSystemService(LocaleManager::class.java).applicationLocales
+        if(appLocales.isEmpty)context.resources.configuration.locales[0].language else appLocales[0].language
+    }else context.resources.configuration.locales[0].language
+    return if(language=="de")de else en
+}
 
 class MainActivity:ComponentActivity(){
     override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{ArbeitsKlarApp()}}
