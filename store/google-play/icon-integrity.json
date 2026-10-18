@@ -1,9 +1,11 @@
 {
   "package": "de.kamilunavo.arbeitsklar",
-  "sha256": "db13a3d37050498f46bff2a932a8d0b1ca1ea683e84a9ccd4523ccd14d17df82",
-  "source": "Existing Google Play Store icon retrieved for this app on 2026-09-11; artwork unchanged",
+  "sha256": "9bc66afcf0ff4742a3b595c4a92070196728894945d0b818774a634f9cae15de",
+  "source": "512px export of the canonical iOS/Android icon; verified pixel-identical to the launcher artwork in Google Play bundle versionCode 6 on 2026-10-18. Saved to both EN and DE listings.",
   "dimensions": [
     512,
     512
-  ]
+  ],
+  "nativeBundleVersionCode": 6,
+  "nativeBundleSHA256": "918190cb80f852071b1774e51b47aba4d32564962ce93f8074ad0cb9c87428cf"
 }
