@@ -39,18 +39,15 @@ data class WorkSession(
     fun earnings(now: Long = System.currentTimeMillis()) = workMillis(now) / 3_600_000.0 * hourlyRate
 }
 
-data class PlannedShift(
-    val id: String = UUID.randomUUID().toString(),
-    val startsAt: Long,
-    val hours: Double,
-    val title: String,
-)
-
 class WorkStore(context: Context) {
     private val prefs = context.getSharedPreferences("arbeitsklar_v1", Context.MODE_PRIVATE)
     var profile: Profile = readProfile(); private set
     var sessions: List<WorkSession> = readSessions(); private set
-    var planned: List<PlannedShift> = readPlanned(); private set
+    private var roster = readRoster()
+    var planned: List<PlannedShift>
+        get() = roster.shifts
+        private set(value) { roster = roster.copy(shifts = value) }
+    val cycles get() = roster.cycles
     var theme: String
         get() = prefs.getString("theme", "classic") ?: "classic"
         set(value) = prefs.edit().putString("theme", value).apply()
@@ -66,7 +63,22 @@ class WorkStore(context: Context) {
         sessions = listOf(WorkSession(hourlyRate = profile.hourlyRate, currency = profile.currency, plannedHours = hours, title = title)) + sessions
         saveSessions()
     }
-    fun start(shift: PlannedShift) { start(shift.title, shift.hours); planned = planned.filterNot { it.id == shift.id }; savePlanned() }
+    fun start(shift: PlannedShift) {
+        if (active != null || planned.none { it.id == shift.id }) return
+        start(shift.title, shift.hours)
+        planned = planned.filterNot { it.id == shift.id }; savePlanned()
+    }
+    fun previewCycle(cycle: RosterCycle) = RosterRules.preview(cycle, planned, System.currentTimeMillis())
+    fun applyCycle(cycle: RosterCycle, skipConflicts: Boolean) {
+        val replacement = roster.applying(cycle, skipConflicts, System.currentTimeMillis())
+        persistRoster(replacement)
+        roster = replacement
+    }
+    fun endCycle(id: String) {
+        val replacement = roster.ending(id, System.currentTimeMillis())
+        persistRoster(replacement)
+        roster = replacement
+    }
     fun pause() = mutateActive { it.copy(breaks = it.breaks + WorkBreak(System.currentTimeMillis())) }
     fun resume() = mutateActive { session ->
         session.copy(breaks = session.breaks.map { if (it.endedAt == null) it.copy(endedAt = System.currentTimeMillis()) else it })
@@ -93,7 +105,19 @@ class WorkStore(context: Context) {
         saveSessions()
     }
     private fun saveSessions() = prefs.edit().putString("sessions", JSONArray().apply { sessions.forEach { put(sessionJson(it)) } }.toString()).apply()
-    private fun savePlanned() = prefs.edit().putString("planned", JSONArray().apply { planned.forEach { put(JSONObject().put("id", it.id).put("starts", it.startsAt).put("hours", it.hours).put("title", it.title)) } }.toString()).apply()
+    private fun savePlanned() = persistRoster(roster)
+    private fun persistRoster(value: RosterState) {
+        check(prefs.edit().putString("roster_v1", RosterJson.encode(value)).commit()) { "save" }
+    }
+    private fun readRoster(): RosterState {
+        prefs.getString("roster_v1", null)?.let { text ->
+            runCatching { RosterJson.decode(text) }.getOrNull()?.let { return it }
+            if (!prefs.contains("roster_recovery")) prefs.edit().putString("roster_recovery", text).commit()
+        }
+        return runCatching { RosterJson.legacy(prefs.getString("planned", "[]")!!) }
+            .getOrDefault(RosterState(emptyList(), emptyList()))
+    }
+
     private fun readProfile(): Profile = runCatching {
         val o = JSONObject(prefs.getString("profile", "{}")!!)
         Profile(o.optDouble("rate", 20.0), o.optString("currency", "EUR"), o.optDouble("hours", 8.0), o.optDouble("monthly"), o.optDouble("shift"), o.optDouble("overtime", 1.0), o.optDouble("night"), o.optDouble("weekend"), o.optBoolean("reminders"))
@@ -103,9 +127,6 @@ class WorkStore(context: Context) {
             val o=a.getJSONObject(i); val b=o.optJSONArray("breaks") ?: JSONArray()
             WorkSession(o.getString("id"),o.getLong("starts"),if(o.has("ends"))o.getLong("ends")else null,o.getDouble("rate"),o.getString("currency"),o.getDouble("hours"),List(b.length()){j->val x=b.getJSONObject(j);WorkBreak(x.getLong("starts"),if(x.has("ends"))x.getLong("ends")else null)},o.optString("title"),o.optString("note"),o.optDouble("tips"))
         }
-    }.getOrDefault(emptyList())
-    private fun readPlanned(): List<PlannedShift> = runCatching {
-        val a=JSONArray(prefs.getString("planned","[]"));List(a.length()){i->val o=a.getJSONObject(i);PlannedShift(o.getString("id"),o.getLong("starts"),o.getDouble("hours"),o.optString("title"))}
     }.getOrDefault(emptyList())
     private fun profileJson(p: Profile)=JSONObject().put("rate",p.hourlyRate).put("currency",p.currency).put("hours",p.plannedHours).put("monthly",p.monthlyGoal).put("shift",p.shiftGoal).put("overtime",p.overtimeMultiplier).put("night",p.nightBonus).put("weekend",p.weekendBonus).put("reminders",p.reminders)
     private fun sessionJson(s:WorkSession)=JSONObject().put("id",s.id).put("starts",s.startedAt).apply{if(s.endedAt!=null)put("ends",s.endedAt)}.put("rate",s.hourlyRate).put("currency",s.currency).put("hours",s.plannedHours).put("title",s.title).put("note",s.note).put("tips",s.tips).put("breaks",JSONArray().apply{s.breaks.forEach{b->put(JSONObject().put("starts",b.startedAt).apply{if(b.endedAt!=null)put("ends",b.endedAt)})}})

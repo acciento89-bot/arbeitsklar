@@ -101,4 +101,18 @@ let storage = ShiftRosterStorage(defaults: defaults)
 expect(storage.load().shifts.first?.id == overnight.id && storage.load().cycles.isEmpty, "legacy storage migrates without losing individual shift")
 try storage.save(edited)
 expect(storage.load().cycles == edited.cycles && storage.load().shifts.count == edited.shifts.count, "single-key persistence reopens complete roster")
+let longTemplate = ShiftTemplate(name: "Lang", startHour: 23, startMinute: 0, plannedHours: 16, breakMinutes: 240)
+let shortTemplate = ShiftTemplate(name: "Früh", startHour: 7, startMinute: 0, plannedHours: 8)
+let crossing = cycle([longTemplate, shortTemplate, nil, nil, nil, nil, nil])
+let crossingPreview = try ShiftCyclePlanner.preview(crossing, existing: [], asOf: now)
+expect(crossingPreview.conflictingShiftIDs.count == 2, "intra-pattern overnight collisions detected across weeks")
+let foreignBlockers = p.shifts.map { shift -> ScheduledShift in
+    var value = shift; value.cycleID = UUID(); return value
+}
+do { _ = try ShiftRoster(shifts: foreignBlockers, cycles: []).applying(regular, skipConflicts: true, asOf: now); fatalError("fully blocked cycle applied") }
+catch ShiftCycleError.noFutureShifts { checked += 1 }
+let corrupt = Data("not-json".utf8)
+defaults.set(corrupt, forKey: ShiftRosterStorage.key)
+_ = storage.load()
+expect(defaults.data(forKey: ShiftRosterStorage.key + "_recovery") == corrupt, "invalid saved snapshot is retained byte-for-byte for recovery")
 print("PASS: \(checked) roster rule and persistence checks")

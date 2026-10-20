@@ -51,6 +51,11 @@
 		A30000000000000000000003 /* WorkActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* WorkActivityAttributes.swift */; };
 		A30000000000000000000004 /* WorkDurationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* WorkDurationFormatter.swift */; };
 		A30000000000000000000005 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Localizable.xcstrings */; };
+		A90000000000000000000001 /* ShiftCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90000000000000000000001 /* ShiftCycle.swift */; };
+		A90000000000000000000002 /* ShiftRoster.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90000000000000000000002 /* ShiftRoster.swift */; };
+		A90000000000000000000003 /* ShiftCyclePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90000000000000000000003 /* ShiftCyclePlanner.swift */; };
+		A90000000000000000000004 /* ShiftRosterStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90000000000000000000004 /* ShiftRosterStorage.swift */; };
+		A90000000000000000000005 /* CyclePlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90000000000000000000005 /* CyclePlannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -122,6 +127,11 @@
 		B30000000000000000000002 /* WorkLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkLiveActivityWidget.swift; sourceTree = "<group>"; };
 		B30000000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B30000000000000000000020 /* ArbeitsKlarLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ArbeitsKlarLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B90000000000000000000001 /* ShiftCycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArbeitsKlar/Models/ShiftCycle.swift"; sourceTree = SOURCE_ROOT; };
+		B90000000000000000000002 /* ShiftRoster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArbeitsKlar/Models/ShiftRoster.swift"; sourceTree = SOURCE_ROOT; };
+		B90000000000000000000003 /* ShiftCyclePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArbeitsKlar/Services/ShiftCyclePlanner.swift"; sourceTree = SOURCE_ROOT; };
+		B90000000000000000000004 /* ShiftRosterStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArbeitsKlar/Services/ShiftRosterStorage.swift"; sourceTree = SOURCE_ROOT; };
+		B90000000000000000000005 /* CyclePlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArbeitsKlar/Features/Planner/CyclePlannerView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +155,11 @@
 		D10000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				B90000000000000000000005 /* CyclePlannerView.swift */,
+				B90000000000000000000004 /* ShiftRosterStorage.swift */,
+				B90000000000000000000003 /* ShiftCyclePlanner.swift */,
+				B90000000000000000000002 /* ShiftRoster.swift */,
+				B90000000000000000000001 /* ShiftCycle.swift */,
 				D10000000000000000000002 /* ArbeitsKlar */,
 				D30000000000000000000001 /* ArbeitsKlarLiveActivity */,
 				D10000000000000000000020 /* Products */,
@@ -455,6 +470,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A90000000000000000000005 /* CyclePlannerView.swift in Sources */,
+				A90000000000000000000004 /* ShiftRosterStorage.swift in Sources */,
+				A90000000000000000000003 /* ShiftCyclePlanner.swift in Sources */,
+				A90000000000000000000002 /* ShiftRoster.swift in Sources */,
+				A90000000000000000000001 /* ShiftCycle.swift in Sources */,
 				A10000000000000000000001 /* ArbeitsKlarApp.swift in Sources */,
 				A10000000000000000000002 /* AppView.swift in Sources */,
 				A10000000000000000000003 /* MetricCard.swift in Sources */,
