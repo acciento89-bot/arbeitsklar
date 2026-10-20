@@ -69,4 +69,36 @@ let legacy = try JSONDecoder().decode(ScheduledShift.self, from: JSONSerializati
 expect(legacy.cycleID == nil && legacy.startsAt == touching.startsAt, "old saved shifts decode without cycle identity")
 let restored = try JSONDecoder().decode(ShiftCycle.self, from: JSONEncoder().encode(regular))
 expect(restored == regular && restored.dayTemplates[5] == nil, "saved rest-day slots round trip")
-print("PASS: \(checked) roster rule checks")
+
+
+let blankRoster = ShiftRoster(shifts: [overnight], cycles: [])
+do { _ = try blankRoster.applying(regular, skipConflicts: false, asOf: now); fatalError("conflicting apply accepted") }
+catch ShiftCycleError.conflicts { checked += 1 }
+let applied = try blankRoster.applying(regular, skipConflicts: true, asOf: now)
+expect(applied.shifts.count == 10 && applied.cycles.count == 1, "apply retains unrelated shift and skips collision")
+let appliedAgain = try applied.applying(regular, skipConflicts: true, asOf: now)
+expect(appliedAgain.shifts.count == applied.shifts.count, "reapply does not duplicate generated dates")
+let midday = berlin("2026-10-27T12:00:00+01:00")
+let historical = applied.shifts.filter { $0.startsAt < midday }
+var revised = regular
+revised.dayTemplates = Array(repeating: late, count: 7)
+let edited = try applied.applying(revised, skipConflicts: true, asOf: midday)
+expect(historical.allSatisfy { old in edited.shifts.contains { $0.id == old.id } }, "edit preserves past and already started entries by identity")
+expect(edited.cycles.first?.dayTemplates.compactMap { $0 }.first?.id == late.id, "edit persists updated template snapshots")
+let ended = edited.endingCycle(id: regular.id, asOf: midday)
+expect(ended.cycles.isEmpty && ended.shifts.count == historical.count, "end removes only future members and definition")
+expect(ended.shifts.contains { $0.id == overnight.id }, "unrelated historical shift survives cancellation")
+let roundTripRoster = try JSONDecoder().decode(ShiftRoster.self, from: JSONEncoder().encode(edited))
+expect(roundTripRoster.shifts.map(\.id) == edited.shifts.map(\.id) && roundTripRoster.cycles == edited.cycles, "atomic snapshot reopens with definitions and member identities")
+let exhaustedDate = berlin("2027-01-01T00:00:00+01:00")
+do { _ = try applied.applying(regular, skipConflicts: true, asOf: exhaustedDate); fatalError("empty future plan accepted") }
+catch ShiftCycleError.noFutureShifts { checked += 1 }
+let suiteName = "roster-smoke-\(UUID().uuidString)"
+let defaults = UserDefaults(suiteName: suiteName)!
+defer { defaults.removePersistentDomain(forName: suiteName) }
+defaults.set(try JSONEncoder().encode([overnight]), forKey: "scheduled_shifts_v1")
+let storage = ShiftRosterStorage(defaults: defaults)
+expect(storage.load().shifts.first?.id == overnight.id && storage.load().cycles.isEmpty, "legacy storage migrates without losing individual shift")
+try storage.save(edited)
+expect(storage.load().cycles == edited.cycles && storage.load().shifts.count == edited.shifts.count, "single-key persistence reopens complete roster")
+print("PASS: \(checked) roster rule and persistence checks")

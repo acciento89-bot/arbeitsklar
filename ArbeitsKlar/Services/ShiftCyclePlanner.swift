@@ -2,7 +2,7 @@ import Foundation
 
 enum ShiftCycleError: Error, Equatable {
     case emptyName, invalidTimeZone, invalidPattern, noWorkDays
-    case invalidDateRange, rangeTooLong, invalidTemplate, conflicts
+    case invalidDateRange, rangeTooLong, invalidTemplate, conflicts, noFutureShifts
 }
 
 struct ShiftCyclePreview {
