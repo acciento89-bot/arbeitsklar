@@ -10,6 +10,7 @@ struct ScheduledShift: Codable, Hashable, Identifiable {
     var tags: [String]
     var reminderMinutesBefore: Int?
     var templateID: UUID?
+    var cycleID: UUID?
 
     init(
         id: UUID = UUID(),
@@ -20,7 +21,8 @@ struct ScheduledShift: Codable, Hashable, Identifiable {
         note: String = "",
         tags: [String] = [],
         reminderMinutesBefore: Int? = nil,
-        templateID: UUID? = nil
+        templateID: UUID? = nil,
+        cycleID: UUID? = nil
     ) {
         self.id = id
         self.startsAt = startsAt
@@ -31,6 +33,7 @@ struct ScheduledShift: Codable, Hashable, Identifiable {
         self.tags = ShiftTemplate.normalizedTags(tags)
         self.reminderMinutesBefore = reminderMinutesBefore.map { min(max($0, 0), 1_440) }
         self.templateID = templateID
+        self.cycleID = cycleID
     }
 
     var endsAt: Date {
