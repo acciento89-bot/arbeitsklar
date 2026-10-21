@@ -14,7 +14,7 @@ android {
         minSdk = 26
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 7
+        versionCode = 8
         versionName = "1.1.0"
     }
     buildFeatures { compose = true; buildConfig = true }
@@ -36,6 +36,11 @@ tasks.register("verifyLauncherIconParity") {
 }
 
 dependencies {
+    constraints {
+        implementation("androidx.fragment:fragment:1.9.1") {
+            because("Avoid obsolete transitive Fragment in the Android billing dependency graph")
+        }
+    }
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
