@@ -31,14 +31,17 @@ trap cleanup EXIT
 [[ "$(timeout 5s adb -s "$serial" shell getprop ro.kernel.qemu | tr -d '\r')" == 1 ]]
 timeout 5s adb devices > "$proof/before-devices.txt"
 [[ "$(awk 'NR>1 && NF {print $1}' "$proof/before-devices.txt")" == "$serial" ]]
+# Stop only the known cloud image launcher before Compose starts the app directly.
+# This avoids first-boot Pixel Launcher ANRs obscuring the captured app evidence.
+timeout 10s adb -s "$serial" shell am force-stop com.google.android.apps.nexuslauncher
+sleep 20
 timeout 10s adb -s "$serial" shell dumpsys activity lastanr > "$proof/preflight-anr.txt"
-if grep -qi com.android.systemui "$proof/preflight-anr.txt"; then
-  echo 'SystemUI ANR observed; native tests not started' >&2
+if grep -Eqi "ANR in|Application Not Responding|com.android.systemui|com.google.android.apps.nexuslauncher" "$proof/preflight-anr.txt"; then
+  echo 'Cloud system/launcher ANR observed; native tests not started' >&2
   exit 1
 else
   grep_rc=$?
   [[ "$grep_rc" == 1 ]] || { echo 'Cannot read ANR evidence' >&2; exit 1; }
 fi
-sleep 20
 gradle -p android --no-daemon --max-workers=1 connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.class=de.kamilunavo.arbeitsklar.RosterNativeTest --stacktrace 2>&1 | tee "$proof/native-tests.log"
 python3 .github/native-acceptance/verify-native-results.py
