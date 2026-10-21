@@ -15,16 +15,22 @@ on:
       - "ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
       - ".github/workflows/android-ci.yml"
   workflow_dispatch:
+    inputs:
+      native_acceptance:
+        description: Run the existing two native roster tests on one owned cloud emulator
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: arbeitsklar-android-ci
+  group: arbeitsklar-android-ci-${{ github.ref }}-${{ inputs.native_acceptance || false }}
   cancel-in-progress: true
 
 jobs:
   android:
+    if: github.event_name != 'workflow_dispatch' || !inputs.native_acceptance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -41,7 +47,7 @@ jobs:
           set -euo pipefail
           test "$(grep -c 'applicationId = "de.kamilunavo.arbeitsklar"' android/app/build.gradle.kts)" -eq 1
           test "$(grep -c 'versionName = "1.1.0"' android/app/build.gradle.kts)" -eq 1
-          test "$(grep -c 'versionCode = 7' android/app/build.gradle.kts)" -eq 1
+          test "$(grep -c 'versionCode = 8' android/app/build.gradle.kts)" -eq 1
           grep -Fq 'android:icon="@drawable/arbeitsklar_store_icon"' android/app/src/main/AndroidManifest.xml
           ! grep -Fq 'android:roundIcon=' android/app/src/main/AndroidManifest.xml
           grep -Fq 'ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png' android/app/build.gradle.kts
@@ -66,7 +72,56 @@ jobs:
           sha256sum "$IOS" "$ANDROID"
       - uses: actions/upload-artifact@v4
         with:
-          name: ArbeitsKlar-1.1.0-7-unsigned-aab
+          name: ArbeitsKlar-1.1.0-8-unsigned-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
+
+  native-acceptance:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Verify cloud SDK cleanup behavior
+        run: python3 -m unittest discover -s .github/native-acceptance/tests -v
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '9.5.0'
+      - name: Build actual roster candidate and unchanged native tests
+        run: |
+          set -euo pipefail
+          mkdir -p .github/native-acceptance/proof
+          git rev-parse HEAD > .github/native-acceptance/proof/source-commit.txt
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          gradle -p android --no-daemon --max-workers=1 testDebugUnitTest assembleDebug assembleDebugAndroidTest --stacktrace 2>&1 | tee .github/native-acceptance/proof/build.log
+      - name: Enable official emulator KVM
+        run: test -e /dev/kvm && sudo chmod 666 /dev/kvm
+      - name: Existing real Android roster tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          avd-name: ArbeitsKlarNativeAcceptanceApi35
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 2048
+          disable-animations: true
+          script: bash .github/native-acceptance/run-cloud.sh
+      - name: Retain actual native success or failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArbeitsKlar-native-roster-${{ github.sha }}-${{ github.run_attempt }}
+          path: .github/native-acceptance/proof/
+          if-no-files-found: warn
+          retention-days: 14
