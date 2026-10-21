@@ -103,7 +103,7 @@ class RosterNativeTest {
             waitText("Schicht bearbeiten")
             val before = WorkStore(context).planned.first()
             compose.onNodeWithText("Bezeichnung").performTextReplacement("Native Einzeländerung")
-            device.pressBack()
+            screenshot("04-individual-editor")
             compose.onNodeWithText("Speichern").performClick()
             waitText("Native Einzeländerung")
             val edited = WorkStore(context).planned.first { it.id == before.id }
