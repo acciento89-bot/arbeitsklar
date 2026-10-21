@@ -103,16 +103,21 @@ class RosterNativeTest {
             waitText("Schicht bearbeiten")
             val before = WorkStore(context).planned.first()
             compose.onNodeWithText("Bezeichnung").performTextReplacement("Native Einzeländerung")
+            compose.onNodeWithText("Bezeichnung").assertTextContains("Native Einzeländerung")
+            compose.waitForIdle()
             screenshot("04-individual-editor")
             compose.onNodeWithText("Speichern").performClick()
-            waitText("Native Einzeländerung")
+            compose.waitForIdle()
             val edited = WorkStore(context).planned.first { it.id == before.id }
             assertEquals("Native Einzeländerung", edited.title)
             assertEquals(before.cycleId, edited.cycleId)
             assertEquals(before.nominalStart, edited.nominalStart)
+            compose.onNode(hasScrollAction()).performScrollToNode(hasText("Native Einzeländerung"))
+            compose.onNodeWithText("Native Einzeländerung").assertIsDisplayed()
             scenario.recreate()
-            waitText("Native Einzeländerung")
-            screenshot("04-individual-edit-persisted")
+            compose.onNode(hasScrollAction()).performScrollToNode(hasText("Native Einzeländerung"))
+            compose.onNodeWithText("Native Einzeländerung").assertIsDisplayed()
+            screenshot("05-individual-edit-persisted")
         } finally { scenario.close() }
     }
 }

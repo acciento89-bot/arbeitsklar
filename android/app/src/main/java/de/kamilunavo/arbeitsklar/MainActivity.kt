@@ -156,15 +156,17 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
     var editor by rememberSaveable{mutableStateOf(false)}
     var cycles by rememberSaveable{mutableStateOf(false)}
     var editingId by rememberSaveable{mutableStateOf<String?>(null)}
-    if(cycles) { RosterScreen(store, {cycles=false}, reload, modifier); return }
+    if(cycles) { RosterScreen(store, refresh, {cycles=false}, reload, modifier); return }
+    // Capture the immutable list per store revision so LazyColumn observes saved edits.
+    val planned = remember(refresh) { store.planned }
     LazyColumn(modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp,18.dp,20.dp,32.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
         item{Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Header(tr("SCHICHTPLAN","SHIFT PLAN"),tr("Vorausdenken. Entspannt starten.","Plan ahead. Start relaxed."),tr("Plane deine nächsten Einsätze und starte sie direkt.","Schedule upcoming shifts and start them directly."))};IconButton({editingId=null;editor=true}){Icon(Icons.Default.Add,null,tint=Blue)}}}
         item{Button({cycles=true},Modifier.fillMaxWidth()){Icon(Icons.Default.CalendarMonth,null);Text(tr(" Schichtfolgen"," Shift cycles"))}}
-        if(store.planned.isEmpty())item{EmptyCard(Icons.Default.CalendarMonth,tr("Noch keine Schichten geplant","No shifts planned yet"),tr("Lege deine nächste Schicht mit Startzeit und Dauer an.","Add your next shift with its start time and duration."))}
-        else items(store.planned,key={it.id}){s->GlassCard{Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp).background(Blue.copy(alpha=.14f),RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.CalendarMonth,null,tint=Blue)};Column(Modifier.weight(1f).padding(start=13.dp)){Text(s.title.ifBlank{tr("Geplante Schicht","Planned shift")},fontWeight=FontWeight.Bold,fontSize=18.sp);Text(dateTime(s.startsAt)+" · "+hours(s.hours),color=Secondary,fontSize=13.sp)};IconButton({editingId=s.id;editor=true}){Icon(Icons.Default.Edit,tr("Bearbeiten","Edit"),tint=Blue)};IconButton({store.deletePlanned(s.id);reload()}){Icon(Icons.Default.Delete,null,tint=Secondary)}};OutlinedButton({store.start(s);reload()},Modifier.fillMaxWidth()){Text(tr("Jetzt starten","Start now"))}}}
+        if(planned.isEmpty())item{EmptyCard(Icons.Default.CalendarMonth,tr("Noch keine Schichten geplant","No shifts planned yet"),tr("Lege deine nächste Schicht mit Startzeit und Dauer an.","Add your next shift with its start time and duration."))}
+        else items(planned,key={it.id}){s->GlassCard{Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp).background(Blue.copy(alpha=.14f),RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.CalendarMonth,null,tint=Blue)};Column(Modifier.weight(1f).padding(start=13.dp)){Text(s.title.ifBlank{tr("Geplante Schicht","Planned shift")},fontWeight=FontWeight.Bold,fontSize=18.sp);Text(dateTime(s.startsAt)+" · "+hours(s.hours),color=Secondary,fontSize=13.sp)};IconButton({editingId=s.id;editor=true}){Icon(Icons.Default.Edit,tr("Bearbeiten","Edit"),tint=Blue)};IconButton({store.deletePlanned(s.id);reload()}){Icon(Icons.Default.Delete,null,tint=Secondary)}};OutlinedButton({store.start(s);reload()},Modifier.fillMaxWidth()){Text(tr("Jetzt starten","Start now"))}}}
     }
     if(editor) {
-        val selected=store.planned.firstOrNull{it.id==editingId}
+        val selected=planned.firstOrNull{it.id==editingId}
         ShiftEditor(selected,store.profile.plannedHours,store.cycles.firstOrNull{it.id==selected?.cycleId}?.zone,{editor=false;editingId=null}) {
             store.savePlannedShift(it);editor=false;editingId=null;reload()
         }

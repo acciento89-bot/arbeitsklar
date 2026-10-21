@@ -18,7 +18,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun RosterScreen(store: WorkStore, close: () -> Unit, reload: () -> Unit, modifier: Modifier) {
+fun RosterScreen(store: WorkStore, refresh: Int, close: () -> Unit, reload: () -> Unit, modifier: Modifier) {
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var ending by rememberSaveable { mutableStateOf<String?>(null) }
     var failure by rememberSaveable { mutableStateOf(false) }
@@ -26,6 +26,7 @@ fun RosterScreen(store: WorkStore, close: () -> Unit, reload: () -> Unit, modifi
         RosterEditor(store, editing!!, { editing = null }, reload, modifier)
         return
     }
+    val savedCycles = remember(refresh) { store.cycles }
     LazyColumn(modifier.fillMaxSize(), contentPadding=PaddingValues(20.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) {
         item { TextButton(close) { Text(tr("Zurück zum Planer","Back to planner")) } }
         item { Text(tr("Schichtfolgen","Shift cycles"), style=MaterialTheme.typography.headlineLarge) }
@@ -36,8 +37,8 @@ fun RosterScreen(store: WorkStore, close: () -> Unit, reload: () -> Unit, modifi
             val cycle = RosterCycle(name=if(Locale.getDefault().language=="de") "Meine Schichtfolge" else "My shift cycle",start=today,end=today.plusDays(27),zone=ZoneId.systemDefault().id,slots=listOf(shift,shift,shift,shift,shift,null,null))
             editing = encodeCycle(cycle)
         },Modifier.fillMaxWidth()) { Text(tr("Schichtfolge anlegen","Create shift cycle")) } }
-        if(store.cycles.isEmpty()) item { Text(tr("Noch keine Schichtfolge angelegt.","No shift cycles yet.")) }
-        items(store.cycles,key={it.id}) { cycle ->
+        if(savedCycles.isEmpty()) item { Text(tr("Noch keine Schichtfolge angelegt.","No shift cycles yet.")) }
+        items(savedCycles,key={it.id}) { cycle ->
             Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                 Text(cycle.name,style=MaterialTheme.typography.titleLarge)
                 Text("${cycle.start} – ${cycle.end}\n${cycle.zone}")
