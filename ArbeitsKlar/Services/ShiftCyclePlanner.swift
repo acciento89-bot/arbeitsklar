@@ -17,7 +17,7 @@ struct ShiftCyclePreview {
 enum ShiftCyclePlanner {
     /// Calendar arithmetic intentionally avoids adding 86,400 seconds across DST.
     static func preview(
-        _ cycle: ShiftCycle, existing: [ScheduledShift], asOf now: Date = .now
+        _ cycle: ShiftCycle, existing: [ScheduledShift], consumed: [ConsumedShiftOccurrence] = [], asOf now: Date = .now
     ) throws -> ShiftCyclePreview {
         guard !cycle.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ShiftCycleError.emptyName
@@ -49,6 +49,9 @@ enum ShiftCyclePlanner {
         // An edit replaces only future members of the same series. A shift that
         // has already started still participates in collision detection.
         let protected = existing.filter { !($0.cycleID == cycle.id && $0.startsAt >= now) }
+        let consumedDays = Set(consumed.filter { $0.cycleID == cycle.id }.map {
+            calendar.startOfDay(for: $0.startsAt)
+        })
         var candidates: [ScheduledShift] = []
         var accepted: [ScheduledShift] = []
         var conflicts = Set<UUID>()
@@ -60,11 +63,12 @@ enum ShiftCyclePlanner {
                     of: day, matchingPolicy: .nextTime, repeatedTimePolicy: .first,
                     direction: .forward
                   ), calendar.isDate(start, inSameDayAs: day), start >= now else { continue }
+            guard !consumedDays.contains(calendar.startOfDay(for: start)) else { continue }
             let shift = ScheduledShift(
                 startsAt: start, plannedHours: template.plannedHours,
                 breakMinutes: template.breakMinutes, title: template.name,
                 note: template.note, tags: template.tags,
-                templateID: template.id, cycleID: cycle.id
+                templateID: template.id, cycleID: cycle.id, cycleOccurrenceDate: start
             )
             candidates.append(shift)
             // Accepted candidates also protect against self-overlapping cycles.

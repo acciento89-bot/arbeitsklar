@@ -65,10 +65,12 @@ class WorkStore(context: Context) {
     }
     fun start(shift: PlannedShift) {
         if (active != null || planned.none { it.id == shift.id }) return
+        val replacement = roster.consuming(shift.id)
+        persistRoster(replacement)
+        roster = replacement
         start(shift.title, shift.hours)
-        planned = planned.filterNot { it.id == shift.id }; savePlanned()
     }
-    fun previewCycle(cycle: RosterCycle) = RosterRules.preview(cycle, planned, System.currentTimeMillis())
+    fun previewCycle(cycle: RosterCycle) = RosterRules.preview(cycle, planned, System.currentTimeMillis(), roster.consumed)
     fun applyCycle(cycle: RosterCycle, skipConflicts: Boolean) {
         val replacement = roster.applying(cycle, skipConflicts, System.currentTimeMillis())
         persistRoster(replacement)
@@ -94,6 +96,12 @@ class WorkStore(context: Context) {
     fun addPlanned(startsAt: Long, hours: Double, title: String) {
         planned = (planned + PlannedShift(startsAt = startsAt, hours = hours.coerceIn(1.0, 16.0), title = title.trim())).sortedBy { it.startsAt }
         savePlanned()
+    }
+    fun savePlannedShift(shift: PlannedShift) {
+        require(shift.hours.isFinite() && shift.hours in 1.0..16.0 && shift.breakMinutes in 0..240)
+        val replacement = roster.copy(shifts=(planned.filterNot { it.id == shift.id } + shift.copy(title=shift.title.trim())).sortedBy { it.startsAt })
+        persistRoster(replacement)
+        roster = replacement
     }
     fun deletePlanned(id: String) { planned = planned.filterNot { it.id == id }; savePlanned() }
     fun updateProfile(value: Profile) { profile = value; prefs.edit().putString("profile", profileJson(value).toString()).apply() }

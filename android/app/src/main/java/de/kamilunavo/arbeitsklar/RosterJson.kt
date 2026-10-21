@@ -15,12 +15,16 @@ object RosterJson {
                     put(template?.let { JSONObject().put("id",it.id).put("name",it.name)
                         .put("hour",it.hour).put("minute",it.minute).put("hours",it.hours).put("break",it.breakMinutes) } ?: JSONObject.NULL)
                 } })
-        ) } }).toString()
+        ) } })
+        .put("consumed", JSONArray().apply { state.consumed.forEach {
+            put(JSONObject().put("cycle",it.cycleId).put("starts",it.startsAt))
+        } }).toString()
 
     fun decode(text: String): RosterState {
         val root = JSONObject(text)
         val shifts = root.getJSONArray("shifts")
         val cycles = root.getJSONArray("cycles")
+        val consumed = root.optJSONArray("consumed") ?: JSONArray()
         return RosterState(readShifts(shifts), List(cycles.length()) { i ->
             val c = cycles.getJSONObject(i)
             val slots = c.getJSONArray("slots")
@@ -30,14 +34,14 @@ object RosterJson {
                         RosterTemplate(t.getString("id"),t.getString("name"),t.getInt("hour"),t.getInt("minute"),t.getDouble("hours"),t.optInt("break"))
                     }
                 })
-        })
+        }, List(consumed.length()) { i -> consumed.getJSONObject(i).let { ConsumedOccurrence(it.getString("cycle"),it.getLong("starts")) } })
     }
     fun legacy(text: String) = RosterState(readShifts(JSONArray(text)), emptyList())
     private fun readShifts(a: JSONArray) = List(a.length()) { i ->
         val o = a.getJSONObject(i)
         PlannedShift(o.getString("id"),o.getLong("starts"),o.getDouble("hours"),o.optString("title"),
-            o.optInt("break"),if(o.isNull("cycle")) null else o.optString("cycle").takeIf { it.isNotBlank() })
+            o.optInt("break"),if(o.isNull("cycle")) null else o.optString("cycle").takeIf { it.isNotBlank() }, if(o.isNull("nominal"))null else o.optLong("nominal"))
     }
     private fun shiftJson(s: PlannedShift) = JSONObject().put("id",s.id).put("starts",s.startsAt)
-        .put("hours",s.hours).put("title",s.title).put("break",s.breakMinutes).put("cycle",s.cycleId ?: JSONObject.NULL)
+        .put("hours",s.hours).put("title",s.title).put("break",s.breakMinutes).put("cycle",s.cycleId ?: JSONObject.NULL).put("nominal",s.nominalStart ?: JSONObject.NULL)
 }

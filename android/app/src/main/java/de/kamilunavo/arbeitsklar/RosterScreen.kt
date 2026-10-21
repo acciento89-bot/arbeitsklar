@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -17,15 +18,15 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun RosterScreen(store: WorkStore, close: () -> Unit, reload: () -> Unit) {
+fun RosterScreen(store: WorkStore, close: () -> Unit, reload: () -> Unit, modifier: Modifier) {
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var ending by rememberSaveable { mutableStateOf<String?>(null) }
     var failure by rememberSaveable { mutableStateOf(false) }
     if (editing != null) {
-        RosterEditor(store, editing!!, { editing = null }, reload)
+        RosterEditor(store, editing!!, { editing = null }, reload, modifier)
         return
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding=PaddingValues(20.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) {
+    LazyColumn(modifier.fillMaxSize(), contentPadding=PaddingValues(20.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) {
         item { TextButton(close) { Text(tr("Zurück zum Planer","Back to planner")) } }
         item { Text(tr("Schichtfolgen","Shift cycles"), style=MaterialTheme.typography.headlineLarge) }
         item { Text(tr("Wiederkehrende Arbeits- und freie Tage. Bereits erfasste Arbeitszeiten bleiben erhalten.","Repeating work and rest days. Recorded work sessions are retained.")) }
@@ -54,7 +55,7 @@ fun RosterScreen(store: WorkStore, close: () -> Unit, reload: () -> Unit) {
 private fun encodeCycle(cycle: RosterCycle) = RosterJson.encode(RosterState(emptyList(),listOf(cycle)))
 
 @Composable
-private fun RosterEditor(store: WorkStore, initial: String, close: () -> Unit, reload: () -> Unit) {
+private fun RosterEditor(store: WorkStore, initial: String, close: () -> Unit, reload: () -> Unit, modifier: Modifier) {
     var json by rememberSaveable(initial) { mutableStateOf(initial) }
     val draft = remember(json) { RosterJson.decode(json).cycles.single() }
     var preview by remember { mutableStateOf<RosterPreview?>(null) }
@@ -70,9 +71,9 @@ private fun RosterEditor(store: WorkStore, initial: String, close: () -> Unit, r
     val choices = (draft.slots.filterNotNull()+store.cycles.flatMap { it.slots.filterNotNull() }+presets).distinctBy { it.id }
     val context = LocalContext.current
     val dateFormat = DateTimeFormatter.ofPattern("EEE, d MMM HH:mm",Locale.getDefault()).withZone(ZoneId.of(draft.zone))
-    LazyColumn(Modifier.fillMaxSize().imePadding(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+    LazyColumn(modifier.fillMaxSize().imePadding().testTag("cycle-scroll"),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item { TextButton(close) { Text(tr("Abbrechen","Cancel")) };Text(tr("Schichtfolge planen","Plan shift cycle"),style=MaterialTheme.typography.headlineMedium) }
-        item { OutlinedTextField(draft.name,{update(draft.copy(name=it))},Modifier.fillMaxWidth(),label={Text(tr("Name","Name"))}) }
+        item { OutlinedTextField(draft.name,{update(draft.copy(name=it))},Modifier.fillMaxWidth().testTag("cycle-name"),label={Text(tr("Name","Name"))}) }
         item { Text(tr("Maximal 183 Kalendertage. Die Uhrzeiten bleiben in der gespeicherten Zeitzone, auch auf Reisen.","Up to 183 calendar days. Times stay in the saved time zone, including when travelling."));Text(draft.zone,style=MaterialTheme.typography.labelLarge) }
         item { OutlinedButton({DatePickerDialog(context,{_,y,m,d->update(draft.copy(start=LocalDate.of(y,m+1,d)))},draft.start.year,draft.start.monthValue-1,draft.start.dayOfMonth).show()},Modifier.fillMaxWidth()){Text(tr("Beginn: ","Start: ")+draft.start)} }
         item { OutlinedButton({DatePickerDialog(context,{_,y,m,d->update(draft.copy(end=LocalDate.of(y,m+1,d)))},draft.end.year,draft.end.monthValue-1,draft.end.dayOfMonth).show()},Modifier.fillMaxWidth()){Text(tr("Letzter Tag: ","Last day: ")+draft.end)} }
@@ -94,7 +95,7 @@ private fun RosterEditor(store: WorkStore, initial: String, close: () -> Unit, r
                 }
             }
         }
-        item { Button({runCatching { store.previewCycle(draft) }.onSuccess{preview=it}.onFailure{error=it.message}},Modifier.fillMaxWidth()){Text(tr("Datierte Vorschau","Dated preview"))} }
+        item { Button({runCatching { store.previewCycle(draft) }.onSuccess{preview=it}.onFailure{error=it.message}},Modifier.fillMaxWidth().testTag("cycle-preview")){Text(tr("Datierte Vorschau","Dated preview"))} }
         item { Text(tr("Anwenden ersetzt zukünftige Termine derselben Folge, auch einzeln bearbeitete. Erinnerungen werden nicht automatisch aktiviert.","Applying replaces future members of this cycle, including individually edited shifts. Reminders are not enabled automatically."),style=MaterialTheme.typography.bodySmall) }
         preview?.let { value ->
             item { Text(tr("Termine: ","Shifts: ")+value.shifts.size+tr(" · Überschneidungen: "," · Conflicts: ")+value.conflictingIds.size) }
@@ -103,7 +104,7 @@ private fun RosterEditor(store: WorkStore, initial: String, close: () -> Unit, r
                 Text(dateFormat.format(Instant.ofEpochMilli(shift.startsAt)));Text(shift.title)
                 if(shift.id in value.conflictingIds) Text(tr("Überschneidung","Conflicting shift"),color=MaterialTheme.colorScheme.error)
             } } }
-            item { Button({runCatching { store.applyCycle(draft,skip) }.onSuccess{reload();close()}.onFailure{error=it.message;preview=null}},Modifier.fillMaxWidth(),enabled=value.shifts.isNotEmpty()&&(skip||value.conflictingIds.isEmpty())&&(!skip||value.applicable.isNotEmpty())){Text(tr("Anwenden","Apply"))} }
+            item { Button({runCatching { store.applyCycle(draft,skip) }.onSuccess{reload();close()}.onFailure{error=it.message;preview=null}},Modifier.fillMaxWidth().testTag("cycle-apply"),enabled=value.shifts.isNotEmpty()&&(skip||value.conflictingIds.isEmpty())&&(!skip||value.applicable.isNotEmpty())){Text(tr("Anwenden","Apply"))} }
         }
     }
     if(customSlot!=null) CustomRosterTemplate({customSlot=null}) { template ->

@@ -11,6 +11,7 @@ data class PlannedShift(
     val title: String,
     val breakMinutes: Int = 0,
     val cycleId: String? = null,
+    val nominalStart: Long? = null,
 ) {
     val endsAt: Long get() = startsAt + (hours * 3_600_000).toLong() + breakMinutes * 60_000L
 }
@@ -28,24 +29,31 @@ data class RosterCycle(
 data class RosterPreview(val shifts: List<PlannedShift>, val conflictingIds: Set<String>) {
     val applicable get() = shifts.filterNot { it.id in conflictingIds }
 }
-data class RosterState(val shifts: List<PlannedShift>, val cycles: List<RosterCycle>) {
+data class ConsumedOccurrence(val cycleId: String, val startsAt: Long)
+data class RosterState(val shifts: List<PlannedShift>, val cycles: List<RosterCycle>, val consumed: List<ConsumedOccurrence> = emptyList()) {
+    fun consuming(shiftId: String): RosterState {
+        val shift = shifts.firstOrNull { it.id == shiftId } ?: return this
+        val marker = shift.cycleId?.let { ConsumedOccurrence(it, shift.nominalStart ?: shift.startsAt) }
+        return copy(shifts=shifts.filterNot { it.id == shiftId },
+            consumed=if(marker!=null && marker !in consumed) consumed+marker else consumed)
+    }
     fun applying(cycle: RosterCycle, skipConflicts: Boolean, now: Long): RosterState {
-        val preview = RosterRules.preview(cycle, shifts, now)
+        val preview = RosterRules.preview(cycle, shifts, now, consumed)
         require(skipConflicts || preview.conflictingIds.isEmpty()) { "conflicts" }
         val additions = if (skipConflicts) preview.applicable else preview.shifts
         require(additions.isNotEmpty()) { "no_future" }
         return RosterState(
             (shifts.filterNot { it.cycleId == cycle.id && it.startsAt >= now } + additions).sortedBy { it.startsAt },
-            cycles.filterNot { it.id == cycle.id } + cycle,
+            cycles.filterNot { it.id == cycle.id } + cycle, consumed,
         )
     }
     fun ending(id: String, now: Long) = RosterState(
-        shifts.filterNot { it.cycleId == id && it.startsAt >= now }, cycles.filterNot { it.id == id },
+        shifts.filterNot { it.cycleId == id && it.startsAt >= now }, cycles.filterNot { it.id == id }, consumed,
     )
 }
 
 object RosterRules {
-    fun preview(cycle: RosterCycle, existing: List<PlannedShift>, now: Long): RosterPreview {
+    fun preview(cycle: RosterCycle, existing: List<PlannedShift>, now: Long, consumed: List<ConsumedOccurrence> = emptyList()): RosterPreview {
         require(cycle.name.isNotBlank()) { "name" }
         require(cycle.slots.size in 7..28 && cycle.slots.size % 7 == 0) { "pattern" }
         require(cycle.slots.any { it != null }) { "no_work" }
@@ -57,10 +65,13 @@ object RosterRules {
                 it.hours.isFinite() && it.hours in 1.0..16.0 && it.breakMinutes in 0..240) { "template" }
         }
         val protected = existing.filterNot { it.cycleId == cycle.id && it.startsAt >= now }
+        val consumedDays = consumed.filter { it.cycleId == cycle.id }
+            .map { Instant.ofEpochMilli(it.startsAt).atZone(zone).toLocalDate() }.toSet()
         val all = mutableListOf<PlannedShift>()
         val accepted = mutableListOf<PlannedShift>()
         val conflicts = mutableSetOf<String>()
         for (offset in 0..days.toInt()) {
+            if (cycle.start.plusDays(offset.toLong()) in consumedDays) continue
             val template = cycle.slots[offset % cycle.slots.size] ?: continue
             val local = cycle.start.plusDays(offset.toLong()).atTime(template.hour, template.minute)
             val offsets = zone.rules.getValidOffsets(local)
@@ -71,7 +82,7 @@ object RosterRules {
             val millis = time.toInstant().toEpochMilli()
             if (millis < now) continue
             val shift = PlannedShift(startsAt=millis, hours=template.hours, title=template.name,
-                breakMinutes=template.breakMinutes, cycleId=cycle.id)
+                breakMinutes=template.breakMinutes, cycleId=cycle.id, nominalStart=millis)
             all += shift
             if ((protected + accepted).any { shift.startsAt < it.endsAt && it.startsAt < shift.endsAt }) {
                 conflicts += shift.id

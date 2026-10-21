@@ -3,6 +3,8 @@ package de.kamilunavo.arbeitsklar
 import android.Manifest
 import android.app.Activity
 import android.app.LocaleManager
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -14,6 +16,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,12 +28,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -102,8 +108,8 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
 }
 
 @Composable private fun MainShell(store:WorkStore,billing:BillingManager,refresh:Int,reload:()->Unit){
-    var tab by remember{mutableStateOf(Tab.Today)}
-    Scaffold(containerColor=Bg,bottomBar={NavigationBar(containerColor=Surface){Tab.entries.forEach{item->NavigationBarItem(tab==item,{tab=item},{Icon(item.icon,null)},label={Text(when(item){Tab.Today->tr("Heute","Today");Tab.Planner->tr("Planer","Planner");Tab.History->tr("Verlauf","History");Tab.Settings->tr("Einstellungen","Settings")} )},colors=NavigationBarItemDefaults.colors(selectedIconColor=Blue,selectedTextColor=Blue,indicatorColor=Blue.copy(alpha=.14f)))}}}){padding->
+    var tab by rememberSaveable{mutableStateOf(Tab.Today)}
+    Scaffold(containerColor=Bg,bottomBar={NavigationBar(modifier=Modifier.testTag("main-navigation"),containerColor=Surface){Tab.entries.forEach{item->NavigationBarItem(tab==item,{tab=item},{Icon(item.icon,null)},label={Text(when(item){Tab.Today->tr("Heute","Today");Tab.Planner->tr("Planer","Planner");Tab.History->tr("Verlauf","History");Tab.Settings->tr("Einstellungen","Settings")} )},colors=NavigationBarItemDefaults.colors(selectedIconColor=Blue,selectedTextColor=Blue,indicatorColor=Blue.copy(alpha=.14f)))}}}){padding->
         when(tab){
             Tab.Today->TodayScreen(store,refresh,reload,Modifier.padding(padding))
             Tab.Planner->PlannerScreen(store,refresh,reload,Modifier.padding(padding))
@@ -147,21 +153,46 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
 }
 
 @Composable private fun PlannerScreen(store:WorkStore,refresh:Int,reload:()->Unit,modifier:Modifier){
-    var editor by remember{mutableStateOf(false)}
-    var cycles by remember{mutableStateOf(false)}
-    if(cycles) { RosterScreen(store, {cycles=false}, reload); return }
+    var editor by rememberSaveable{mutableStateOf(false)}
+    var cycles by rememberSaveable{mutableStateOf(false)}
+    var editingId by rememberSaveable{mutableStateOf<String?>(null)}
+    if(cycles) { RosterScreen(store, {cycles=false}, reload, modifier); return }
     LazyColumn(modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp,18.dp,20.dp,32.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
-        item{Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Header(tr("SCHICHTPLAN","SHIFT PLAN"),tr("Vorausdenken. Entspannt starten.","Plan ahead. Start relaxed."),tr("Plane deine nächsten Einsätze und starte sie direkt.","Schedule upcoming shifts and start them directly."))};IconButton({editor=true}){Icon(Icons.Default.Add,null,tint=Blue)}}}
+        item{Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Header(tr("SCHICHTPLAN","SHIFT PLAN"),tr("Vorausdenken. Entspannt starten.","Plan ahead. Start relaxed."),tr("Plane deine nächsten Einsätze und starte sie direkt.","Schedule upcoming shifts and start them directly."))};IconButton({editingId=null;editor=true}){Icon(Icons.Default.Add,null,tint=Blue)}}}
         item{Button({cycles=true},Modifier.fillMaxWidth()){Icon(Icons.Default.CalendarMonth,null);Text(tr(" Schichtfolgen"," Shift cycles"))}}
         if(store.planned.isEmpty())item{EmptyCard(Icons.Default.CalendarMonth,tr("Noch keine Schichten geplant","No shifts planned yet"),tr("Lege deine nächste Schicht mit Startzeit und Dauer an.","Add your next shift with its start time and duration."))}
-        else items(store.planned,key={it.id}){s->GlassCard{Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp).background(Blue.copy(alpha=.14f),RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.CalendarMonth,null,tint=Blue)};Column(Modifier.weight(1f).padding(start=13.dp)){Text(s.title.ifBlank{tr("Geplante Schicht","Planned shift")},fontWeight=FontWeight.Bold,fontSize=18.sp);Text(dateTime(s.startsAt)+" · "+hours(s.hours),color=Secondary,fontSize=13.sp)};IconButton({store.deletePlanned(s.id);reload()}){Icon(Icons.Default.Delete,null,tint=Secondary)}};OutlinedButton({store.start(s);reload()},Modifier.fillMaxWidth()){Text(tr("Jetzt starten","Start now"))}}}
+        else items(store.planned,key={it.id}){s->GlassCard{Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(48.dp).background(Blue.copy(alpha=.14f),RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){Icon(Icons.Default.CalendarMonth,null,tint=Blue)};Column(Modifier.weight(1f).padding(start=13.dp)){Text(s.title.ifBlank{tr("Geplante Schicht","Planned shift")},fontWeight=FontWeight.Bold,fontSize=18.sp);Text(dateTime(s.startsAt)+" · "+hours(s.hours),color=Secondary,fontSize=13.sp)};IconButton({editingId=s.id;editor=true}){Icon(Icons.Default.Edit,tr("Bearbeiten","Edit"),tint=Blue)};IconButton({store.deletePlanned(s.id);reload()}){Icon(Icons.Default.Delete,null,tint=Secondary)}};OutlinedButton({store.start(s);reload()},Modifier.fillMaxWidth()){Text(tr("Jetzt starten","Start now"))}}}
     }
-    if(editor)ShiftEditor({editor=false}){time,hours,title->store.addPlanned(time,hours,title);editor=false;reload()}
+    if(editor) {
+        val selected=store.planned.firstOrNull{it.id==editingId}
+        ShiftEditor(selected,store.profile.plannedHours,store.cycles.firstOrNull{it.id==selected?.cycleId}?.zone,{editor=false;editingId=null}) {
+            store.savePlannedShift(it);editor=false;editingId=null;reload()
+        }
+    }
 }
 
-@Composable private fun ShiftEditor(close:()->Unit,save:(Long,Double,String)->Unit){
-    var title by remember{mutableStateOf("")};var hours by remember{mutableStateOf("8")}
-    AlertDialog(close,title={Text(tr("Schicht planen","Plan shift"),fontWeight=FontWeight.Bold)},text={Column{OutlinedTextField(title,{title=it},Modifier.fillMaxWidth(),label={Text(tr("Bezeichnung","Title"))});OutlinedTextField(hours,{hours=it},Modifier.fillMaxWidth().padding(top=10.dp),label={Text(tr("Dauer in Stunden","Duration in hours"))},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Decimal));Text(tr("Start: morgen um 08:00 Uhr","Starts tomorrow at 8:00 AM"),color=Secondary,modifier=Modifier.padding(top=12.dp))}},confirmButton={Button({save(tomorrowAtEight(),hours.replace(',','.').toDoubleOrNull()?:8.0,title)}){Text(tr("Planen","Schedule"))}},dismissButton={TextButton(close){Text(tr("Abbrechen","Cancel"))}})
+@Composable private fun ShiftEditor(shift:PlannedShift?,defaultHours:Double,storedZone:String?,close:()->Unit,save:(PlannedShift)->Unit){
+    val context=LocalContext.current
+    val zone=java.time.ZoneId.of(storedZone?:java.time.ZoneId.systemDefault().id)
+    val id=rememberSaveable(shift?.id){shift?.id?:java.util.UUID.randomUUID().toString()}
+    var title by rememberSaveable(id){mutableStateOf(shift?.title?:"")}
+    var hours by rememberSaveable(id){mutableStateOf((shift?.hours?:defaultHours).toString())}
+    var pause by rememberSaveable(id){mutableStateOf((shift?.breakMinutes?:0).toString())}
+    var starts by rememberSaveable(id){mutableLongStateOf(shift?.startsAt?:tomorrowAtEight())}
+    var failed by remember{mutableStateOf(false)}
+    val selected=java.time.Instant.ofEpochMilli(starts).atZone(zone)
+    val length=hours.replace(',','.').toDoubleOrNull();val rest=pause.toIntOrNull()
+    val valid=length!=null&&length.isFinite()&&length in 1.0..16.0&&rest!=null&&rest in 0..240
+    AlertDialog(close,title={Text(if(shift==null)tr("Schicht planen","Plan shift")else tr("Schicht bearbeiten","Edit shift"),fontWeight=FontWeight.Bold)},text={Column(Modifier.verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)){
+        OutlinedTextField(title,{title=it},Modifier.fillMaxWidth(),label={Text(tr("Bezeichnung","Title"))})
+        OutlinedButton({DatePickerDialog(context,{_,y,m,d->starts=selected.withYear(y).withMonth(m+1).withDayOfMonth(1).withDayOfMonth(d).toInstant().toEpochMilli()},selected.year,selected.monthValue-1,selected.dayOfMonth).show()},Modifier.fillMaxWidth()){Text(selected.toLocalDate().toString())}
+        OutlinedButton({TimePickerDialog(context,{_,h,m->starts=selected.withHour(h).withMinute(m).withSecond(0).toInstant().toEpochMilli()},selected.hour,selected.minute,android.text.format.DateFormat.is24HourFormat(context)).show()},Modifier.fillMaxWidth()){Text(selected.toLocalTime().withSecond(0).toString())}
+        Text(zone.id,color=Secondary,fontSize=12.sp)
+        OutlinedTextField(hours,{hours=it},Modifier.fillMaxWidth(),label={Text(tr("Arbeitsstunden (1–16)","Work hours (1–16)"))},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Decimal))
+        OutlinedTextField(pause,{pause=it},Modifier.fillMaxWidth(),label={Text(tr("Pause in Minuten (0–240)","Break minutes (0–240)"))},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
+        if(shift?.cycleId!=null)Text(tr("Teil einer Schichtfolge. Erneutes Anwenden der Folge ersetzt diese zukünftige Einzeländerung.","Part of a shift cycle. Reapplying that cycle replaces this future individual edit."),fontSize=12.sp,color=Secondary)
+        if(failed)Text(tr("Speichern fehlgeschlagen. Deine bisherigen Daten bleiben erhalten.","Save failed. Your existing data is retained."),color=MaterialTheme.colorScheme.error)
+    }},confirmButton={Button({runCatching{save(PlannedShift(id,starts,length!!,title,rest!!,shift?.cycleId,shift?.nominalStart))}.onFailure{failed=true}},enabled=valid){Text(tr("Speichern","Save"))}},dismissButton={TextButton(close){Text(tr("Abbrechen","Cancel"))}})
 }
 
 @Composable private fun HistoryScreen(store:WorkStore,refresh:Int,reload:()->Unit,modifier:Modifier){
@@ -187,7 +218,7 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
         item{SettingsCard(tr("Design","Design"),Icons.Default.Palette){listOf("classic" to tr("Klassisch","Classic"),"aurora" to "Aurora","sunset" to "Sunset").forEach{(key,label)->Row(Modifier.fillMaxWidth().clickable{if(key=="classic"||state.pro){store.theme=key;reload()}else paywall=true}.padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(34.dp).background(themeBrush(key),CircleShape));Text(label,Modifier.weight(1f).padding(start=12.dp));if(key!="classic"&&!state.pro)Icon(Icons.Default.Lock,null,tint=Amber)else if(store.theme==key)Icon(Icons.Default.CheckCircle,null,tint=Mint)}}}}
         item{SettingsCard(tr("Automatisierung","Automation"),Icons.Default.Notifications){Row(verticalAlignment=Alignment.CenterVertically){Text(tr("Schicht-Erinnerungen","Shift reminders"),Modifier.weight(1f));Switch(checked=store.profile.reminders,onCheckedChange={enabled->if(!state.pro)paywall=true else if(enabled)permission.launch(Manifest.permission.POST_NOTIFICATIONS)else{store.updateProfile(store.profile.copy(reminders=false));reload()}})}}}
         item{SettingsCard(tr("Daten & Datenschutz","Data & privacy"),Icons.Default.Lock){Text(tr("Alle Daten werden ausschließlich lokal gespeichert.","All data is stored only on this device."),color=Secondary);OutlinedButton({clear=true},Modifier.fillMaxWidth().padding(top=10.dp)){Text(tr("Verlauf löschen","Clear history"))};LinkRow(tr("Datenschutz","Privacy policy")){open(context,"https://kamilunavo.com/arbeitsklar/privacy")};LinkRow(tr("Support","Support")){open(context,"https://kamilunavo.com/arbeitsklar/support")}}}
-        item{Text("ArbeitsKlar 1.0.1 (4)",color=Secondary,fontSize=12.sp,textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth())}
+        item{Text("ArbeitsKlar ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",color=Secondary,fontSize=12.sp,textAlign=TextAlign.Center,modifier=Modifier.fillMaxWidth())}
     }
     if(paywall)Paywall(state,{billing.purchase(context as Activity)},{billing.restore()}){paywall=false}
     if(clear)AlertDialog({clear=false},title={Text(tr("Verlauf wirklich löschen?","Clear your history?"))},text={Text(tr("Beendete Schichten werden dauerhaft entfernt.","Completed shifts will be permanently removed."))},confirmButton={TextButton({store.clearHistory();clear=false;reload()}){Text(tr("Löschen","Clear"),color=MaterialTheme.colorScheme.error)}},dismissButton={TextButton({clear=false}){Text(tr("Abbrechen","Cancel"))}})

@@ -40,8 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(grep -c 'applicationId = "de.kamilunavo.arbeitsklar"' android/app/build.gradle.kts)" -eq 1
-          test "$(grep -c 'versionName = "1.0.3"' android/app/build.gradle.kts)" -eq 1
-          test "$(grep -c 'versionCode = 6' android/app/build.gradle.kts)" -eq 1
+          test "$(grep -c 'versionName = "1.1.0"' android/app/build.gradle.kts)" -eq 1
+          test "$(grep -c 'versionCode = 7' android/app/build.gradle.kts)" -eq 1
           grep -Fq 'android:icon="@drawable/arbeitsklar_store_icon"' android/app/src/main/AndroidManifest.xml
           ! grep -Fq 'android:roundIcon=' android/app/src/main/AndroidManifest.xml
           grep -Fq 'ArbeitsKlar/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png' android/app/build.gradle.kts
@@ -66,7 +66,7 @@ jobs:
           sha256sum "$IOS" "$ANDROID"
       - uses: actions/upload-artifact@v4
         with:
-          name: ArbeitsKlar-1.0.3-6-unsigned-aab
+          name: ArbeitsKlar-1.1.0-7-unsigned-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30

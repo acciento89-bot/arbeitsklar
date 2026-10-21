@@ -52,4 +52,24 @@ class RosterRulesTest {
         assertThrows(IllegalArgumentException::class.java) { state.applying(c, true, Instant.parse("2027-01-01T00:00:00Z").toEpochMilli()) }
         assertEquals(10, state.shifts.size)
     }
+    @Test fun consumedFutureOccurrenceCannotRegenerate() {
+        val cycle = cycle()
+        val state = RosterState(emptyList(), emptyList()).applying(cycle, false, now)
+        val first = state.shifts.first()
+        val started = state.consuming(first.id)
+        val reapplied = started.applying(cycle, false, now)
+        assertEquals(9, reapplied.shifts.size)
+        assertFalse(reapplied.shifts.any { it.startsAt == first.startsAt })
+        assertEquals(1, reapplied.consumed.size)
+    }
+
+    @Test fun movingAndStartingMemberConsumesOriginalOccurrence() {
+        val c=cycle()
+        val original=RosterState(emptyList(),emptyList()).applying(c,false,now)
+        val first=original.shifts.first()
+        val moved=original.copy(shifts=original.shifts.map { if(it.id==first.id) it.copy(startsAt=it.startsAt+3*86400000L) else it })
+        val reapplied=moved.consuming(first.id).applying(c,false,now)
+        assertFalse(reapplied.shifts.any{it.startsAt==first.startsAt})
+    }
+
 }

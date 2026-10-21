@@ -53,6 +53,7 @@ final class WorkSessionStore {
     }
 
     @ObservationIgnored private var updatingRoster = false
+    @ObservationIgnored private var consumedOccurrences: [ConsumedShiftOccurrence] = []
 
     @ObservationIgnored
     private let defaults: UserDefaults
@@ -78,6 +79,7 @@ final class WorkSessionStore {
         let roster = ShiftRosterStorage(defaults: defaults).load()
         self.scheduledShifts = roster.shifts
         self.shiftCycles = roster.cycles
+        self.consumedOccurrences = roster.consumed
         if
             let templateData = defaults.data(forKey: Self.shiftTemplatesKey),
             let templates = try? JSONDecoder().decode([ShiftTemplate].self, from: templateData)
@@ -169,7 +171,8 @@ final class WorkSessionStore {
             note: plannedShift.note,
             tags: plannedShift.tags
         )
-        scheduledShifts.removeAll { $0.id == plannedShift.id }
+        replaceRoster(ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles, consumed: consumedOccurrences)
+            .consuming(shiftID: plannedShift.id))
         reminderController.cancelPlannedShift(id: plannedShift.id)
         sessions.insert(session, at: 0)
         liveActivityController.start(for: session)
@@ -585,7 +588,7 @@ final class WorkSessionStore {
     private func persistScheduledShifts() {
         guard !updatingRoster else { return }
         try? ShiftRosterStorage(defaults: defaults).save(
-            ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles)
+            ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles, consumed: consumedOccurrences)
         )
     }
 
@@ -593,17 +596,18 @@ final class WorkSessionStore {
         updatingRoster = true
         scheduledShifts = roster.shifts
         shiftCycles = roster.cycles
+        consumedOccurrences = roster.consumed
         updatingRoster = false
         persistScheduledShifts()
     }
 
     func previewCycle(_ cycle: ShiftCycle, asOf now: Date = .now) throws -> ShiftCyclePreview {
-        try ShiftCyclePlanner.preview(cycle, existing: scheduledShifts, asOf: now)
+        try ShiftCyclePlanner.preview(cycle, existing: scheduledShifts, consumed: consumedOccurrences, asOf: now)
     }
 
     /// Recompute from current state at apply time; a stale on-screen preview is never trusted.
     func applyCycle(_ cycle: ShiftCycle, skipConflicts: Bool, asOf now: Date = .now) throws {
-        let current = ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles)
+        let current = ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles, consumed: consumedOccurrences)
         let replacement = try current.applying(cycle, skipConflicts: skipConflicts, asOf: now)
         try ShiftRosterStorage(defaults: defaults).save(replacement)
         let remaining = Set(replacement.shifts.map(\.id))
@@ -614,7 +618,7 @@ final class WorkSessionStore {
     }
 
     func endCycle(id: UUID, asOf now: Date = .now) throws {
-        let replacement = ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles)
+        let replacement = ShiftRoster(shifts: scheduledShifts, cycles: shiftCycles, consumed: consumedOccurrences)
             .endingCycle(id: id, asOf: now)
         try ShiftRosterStorage(defaults: defaults).save(replacement)
         let remaining = Set(replacement.shifts.map(\.id))
