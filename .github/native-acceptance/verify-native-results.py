@@ -15,6 +15,11 @@ def verify_reports(folder):
    cases.append((case.get('classname'),case.get('name')))
  if len(cases)!=2 or set(cases)!=EXPECTED:raise ValueError('Expected exactly the two original roster native tests')
  return len(cases)
+def verify_window(text):
+ # ActivityScenario.close() intentionally ends the app; a clean launcher is valid.
+ if not re.search(r'Window\{[^}]+\}',text): raise ValueError('Actual window dump missing')
+ if re.search(r'Application Not Responding|isn.t responding|keeps stopping',text,re.I):
+  raise ValueError('System dialog obscures actual native evidence')
 def main():
  root=Path.cwd();proof=root/'.github/native-acceptance/proof';proof.mkdir(parents=True,exist_ok=True)
  state={'status':'FAILED','transactions':False,'version':'1.1.0 (8)'}
@@ -24,6 +29,7 @@ def main():
   return result.stdout
  try:
   reports=root/'android/app/build/outputs/androidTest-results/connected';state['nativeTestsPassed']=verify_reports(reports)
+  windows=adb(['shell','dumpsys','window','windows']).decode(errors='replace');(proof/'native-evidence-window.txt').write_text(windows);verify_window(windows)
   for file in reports.rglob('TEST-*.xml'):shutil.copyfile(file,proof/file.name)
   identity=adb(['shell','dumpsys','package','de.kamilunavo.arbeitsklar']).decode(errors='replace');(proof/'installed-identity.txt').write_text(identity)
   if not re.search(r'\bversionCode=8\b',identity) or not re.search(r'\bversionName=1\.1\.0\b',identity):raise ValueError('Installed roster candidate mismatch')
