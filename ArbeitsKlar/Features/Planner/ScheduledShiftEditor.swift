@@ -30,6 +30,8 @@ struct ScheduledShiftEditor: View {
     @Environment(AppTheme.self) private var theme
     @Environment(\.dismiss) private var dismiss
 
+    private let cycleOccurrenceDate: Date?
+    private let cycleID: UUID?
     private let shiftID: UUID
     @State private var startsAt: Date
     @State private var plannedHours: Double
@@ -52,6 +54,8 @@ struct ScheduledShiftEditor: View {
     }
 
     init(shift: ScheduledShift) {
+        cycleOccurrenceDate = shift.cycleOccurrenceDate
+        cycleID = shift.cycleID
         shiftID = shift.id
         _startsAt = State(initialValue: shift.startsAt)
         _plannedHours = State(initialValue: shift.plannedHours)
@@ -205,7 +209,9 @@ struct ScheduledShiftEditor: View {
             note: note,
             tags: parsedTags,
             reminderMinutesBefore: reminderEnabled ? reminderLead.rawValue : nil,
-            templateID: selectedTemplateID
+            templateID: selectedTemplateID,
+            cycleID: cycleID,
+            cycleOccurrenceDate: cycleOccurrenceDate
         )
     }
 

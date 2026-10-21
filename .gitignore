@@ -12,3 +12,7 @@ xcuserdata/
 # macOS
 .DS_Store
 
+
+# Local Android build cache
+android/.gradle/
+android/local.properties

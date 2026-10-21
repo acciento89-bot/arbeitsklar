@@ -26,6 +26,15 @@ struct PlannerView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                NavigationLink {
+                    CyclePlannerView()
+                } label: {
+                    Label("cycle.title", systemImage: "calendar.badge.clock")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        .padding(.horizontal)
+                        .background(theme.elevatedBackground, in: RoundedRectangle(cornerRadius: 18))
+                }
                 monthCard
                 agenda
             }

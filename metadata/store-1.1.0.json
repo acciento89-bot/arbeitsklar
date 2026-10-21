@@ -1,0 +1,32 @@
+{
+  "version": "1.1.0",
+  "iOSBuild": 4,
+  "androidVersionCode": 7,
+  "state": "LOCAL_DRAFT_NOT_SAVED_TO_STORES",
+  "noRankingClaims": true,
+  "noDuoVerificationClaim": true,
+  "sources": [
+    "https://developer.apple.com/app-store/product-page/",
+    "https://support.google.com/googleplay/android-developer/answer/9859152?hl=en"
+  ],
+  "localizations": {
+    "de-DE": {
+      "name": "ArbeitsKlar: Zeiterfassung",
+      "subtitle": "Schichtplan, Pausen & Lohn",
+      "keywords": "überstunden,trinkgeld,dienstplan,arbeitsstunden,stundenlohn,brutto,timer,rotation,vorlagen",
+      "shortDescription": "Arbeitszeit erfassen, Schichtfolgen planen und deinen Bruttoverdienst schätzen.",
+      "description": "Dein Arbeitstag, übersichtlich geplant: ArbeitsKlar verbindet Zeiterfassung, Schichtplanung und eine Schätzung deines Bruttoverdienstes. Ohne Pflichtkonto, mit lokaler Speicherung auf deinem Gerät.\n\nNEU: WIEDERKEHRENDE SCHICHTFOLGEN\nLege ein Muster mit einer bis vier Wochen an. Wähle für jeden Tag eine Schichtvorlage oder Frei und plane bis zu 183 Kalendertage am Stück. Die datierte Vorschau zeigt Überschneidungen, bevor du Termine übernimmst. Konflikte werden nur auf deinen ausdrücklichen Wunsch übersprungen.\n\nBearbeite einzelne geplante Schichten oder passe eine ganze Folge an. Erneutes Anwenden ersetzt nur noch nicht begonnene Termine derselben Folge. Bereits gestartete und vergangene Termine sowie deine erfassten Arbeitszeiten bleiben erhalten. Auch bei einer Zeitumstellung werden die Schichten anhand ihrer gespeicherten Zeitzone geplant.\n\nDEIN TÄGLICHER ABLAUF\n• Schicht starten, Pause erfassen und Feierabend festhalten\n• Geplante Einsätze direkt starten\n• Arbeitszeit und geschätzten Verdienst im Blick behalten\n• Trinkgeld getrennt erfassen\n• Vergangene Schichten durchsuchen\n• Stundenlohn und Planstunden selbst festlegen\n\nKeine automatische Anmeldung, kein Pflichtkonto. Ein optionaler einmaliger Pro-Kauf ist in der App erhältlich; es gibt kein Abo.\n\nDie angezeigten Verdienstwerte sind persönliche Schätzungen auf Basis deiner Eingaben und ersetzen keine verbindliche Lohnabrechnung.",
+      "whatsNew": "Neu: wiederkehrende Schichtfolgen mit Mustern für eine bis vier Wochen, Arbeits- und freien Tagen sowie bis zu 183 Kalendertagen Vorschau. Prüfe Überschneidungen vor dem Anwenden, bearbeite einzelne Schichten oder ändere und beende eine ganze Folge. Bereits gestartete und vergangene Termine bleiben erhalten. Die Planung berücksichtigt Zeitumstellungen und die gespeicherte Zeitzone.",
+      "promotionalText": "Neu: wiederkehrende Schichtfolgen mit Mustern für eine bis vier Wochen, Arbeits- und freien Tagen sowie bis zu 183 Kalendertagen Vorschau."
+    },
+    "en-US": {
+      "name": "ArbeitsKlar: Work Time & Pay",
+      "subtitle": "Shift cycles, breaks & hours",
+      "keywords": "roster,timesheet,wage,salary,overtime,tips,timer,rotation,schedule,earnings,templates",
+      "shortDescription": "Track work hours, plan rotating shifts and estimate your gross earnings.",
+      "description": "Plan your workday with clarity. ArbeitsKlar brings together work time tracking, shift planning and an estimate of your gross earnings. No account is required; your records stay on your device.\n\nNEW: REPEATING SHIFT CYCLES\nBuild a pattern of one to four weeks. Choose a shift template or a rest day for each slot, then plan up to 183 calendar days. A dated preview shows overlaps before you apply the plan. Conflicting shifts are skipped only when you explicitly choose to do so.\n\nEdit an individual planned shift or adjust an entire cycle. Reapplying replaces only future shifts belonging to that cycle. Started and historical shifts, as well as your recorded work sessions, are retained. Scheduling follows the saved time zone and handles daylight-saving changes.\n\nYOUR DAILY ROUTINE\n• Start a shift, record breaks and clock out\n• Start a planned shift directly\n• Follow work time and estimated earnings\n• Track tips separately\n• Search past shifts\n• Set your hourly rate and planned work hours\n\nNo required sign-in or account. An optional one-time Pro purchase is available in the app, with no subscription.\n\nEarnings shown are personal estimates based on your entries, not a binding payroll statement.",
+      "whatsNew": "New: repeating shift cycles with one to four weeks of work and rest days and up to 183 calendar days of planning. Preview conflicts before applying, edit individual shifts, or update and end a whole cycle. Started and historical shifts are retained. Scheduling follows the saved time zone and handles daylight-saving changes.",
+      "promotionalText": "New: repeating shift cycles with one to four weeks of work and rest days and up to 183 calendar days of planning."
+    }
+  }
+}
