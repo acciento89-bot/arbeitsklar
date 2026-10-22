@@ -76,10 +76,13 @@ private enum class Tab(val icon:ImageVector){Today(Icons.Default.Bolt),Planner(I
     val billing=remember{BillingManager(context)}
     var refresh by remember{mutableIntStateOf(0)}
     val reload: () -> Unit = { refresh += 1 }
+    // Observe completion even before MainShell exists. SharedPreferences alone
+    // does not invalidate composition when Start or Skip finishes onboarding.
+    val onboarded = remember(refresh) { store.onboarded }
     val colors=darkColorScheme(primary=Blue,secondary=Mint,background=Bg,surface=Surface,onPrimary=Bg,onSecondary=Bg,onBackground=Color.White,onSurface=Color.White)
     MaterialTheme(colorScheme=colors){
         Surface(modifier=Modifier.fillMaxSize(),color=Color.Transparent,contentColor=MaterialTheme.colorScheme.onBackground){
-            if(!store.onboarded)Onboarding(store,reload)
+            if(!onboarded)Onboarding(store,reload)
             else MainShell(store,billing,refresh,reload)
         }
     }

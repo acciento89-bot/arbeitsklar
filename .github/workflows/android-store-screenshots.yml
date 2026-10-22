@@ -2,24 +2,15 @@ name: ArbeitsKlar Android Store Screenshots
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-store-screenshots.yml"
-      - ".github/scripts/capture-android-store-screenshots.sh"
-  push:
-    branches: [main]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-store-screenshots.yml"
-      - ".github/scripts/capture-android-store-screenshots.sh"
 
 permissions:
   contents: read
 
 jobs:
   capture:
+    concurrency:
+      group: arbeitsklar-native-device
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
