@@ -1,11 +1,13 @@
-# ArbeitsKlar Android8 native acceptance
+# Native onboarding and roster acceptance
 
-Manual dispatch only: Android CI with native_acceptance=true. Normal PR/main CI still builds the unsigned release; the separate manual job runs the two existing RosterNativeTest methods on one fresh official API35 Google APIs cloud emulator. No local emulator is created. The existing Kotlin test bytes are unchanged.
+Manual dispatch: Android CI with `native_acceptance=true`. The cloud job runs all four Android native tests on one disposable official API35 Google APIs emulator. It never starts a second local emulator. Normal PR/main CI builds an unsigned release only; it does not publish to Play.
 
-The tests exercise legacy migration, recurring roster persistence and consumed occurrences, real cycle editor/preview/apply/recreate, and individual edits. They modify synthetic data in their own fresh debug app only. No purchase, redemption, restore, personal device or external messaging test runs.
+The two `OnboardingNativeTest` scenarios start with onboarding incomplete, tap Start or Skip, require the actual main navigation immediately, preserve an existing hourly rate, and recreate the activity to verify persistence. They cover the first-run failure Google reported for version8. The two `RosterNativeTest` scenarios exercise legacy migration, recurring roster persistence and consumed occurrences, real editor/preview/apply/recreate, and individual edits.
 
-Before those tests the shell requires the exact emulator serial, QEMU, API35, no extra connected device, and no observed SystemUI ANR. The final verifier requires both named original tests, no failures/errors/skips, actual installed1.1.0(8), the saved synthetic cycle and edit, plus all five actual PNGs. These are native proof, not marketing pictures. Source-unit fixtures do not establish native success.
+The verifier rejects reports missing either first-run test, either roster test, or any of the seven actual screenshots. It also rejects failures/errors/skips, unexpected installed identity, missing saved synthetic data, or system dialogs obscuring the evidence. Unit fixtures do not establish native success.
 
-The EXIT trap captures final diagnostics, stops and deletes only the owned cloud AVD, and fails if nonzero inventory commands prevent confirming absence. The SDK emulator executable is addressed by its full official path. All evidence stays in proof/ and is uploaded only as a private repository workflow artifact. Signing and Google delivery remain separate, explicitly authorized steps.
+All writes belong to the fresh disposable debug app. No purchase, redemption, restoration, personal data, or external communication is exercised. The existing billing initialization can query product availability normally.
 
-The connected test command retains the debug APK only until actual saved-data and screenshot evidence is copied. AGP defaults to uninstalling it; see https://issuetracker.google.com/issues/295039976. The owned emulator is still stopped and deleted immediately by the exit trap.
+The command retains the debug APK until saved-data and screenshot evidence has been copied. AGP otherwise uninstalls it; see https://issuetracker.google.com/issues/295039976. The exit trap then stops and deletes only the owned cloud emulator and verifies cleanup.
+
+For investigations against the actual signed release, `.github/onboarding-native/host` is a separate UI Automator harness. It must run only against a disposable API35 emulator: its setup verifies QEMU and clears the target app's synthetic data. Its two independent Start/Skip tests demonstrated both failures against the unchanged payload derived from submitted8, then passed against the corrected candidate. Keep release identity and artifact digests alongside its results; a debug pass alone is not proof of a signed store artifact.

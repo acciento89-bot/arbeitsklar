@@ -43,5 +43,5 @@ else
   grep_rc=$?
   [[ "$grep_rc" == 1 ]] || { echo 'Cannot read ANR evidence' >&2; exit 1; }
 fi
-gradle -p android --no-daemon --max-workers=1 connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.class=de.kamilunavo.arbeitsklar.RosterNativeTest --stacktrace 2>&1 | tee "$proof/native-tests.log"
+gradle -p android --no-daemon --max-workers=1 connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --stacktrace 2>&1 | tee "$proof/native-tests.log"
 python3 .github/native-acceptance/verify-native-results.py
